@@ -38,7 +38,8 @@ def test_full_lifecycle_and_revocation(client):
     assert client.get("/api/v1/users/me").status_code == 401
     registered = register(client)
     assert registered.status_code == 201
-    assert set(registered.json()) == {"id", "username", "display_name", "created_at"}
+    assert set(registered.json()) == {"id", "username", "display_name", "language", "created_at"}
+    assert registered.json()["language"] == "zh"
     assert registered.json()["created_at"].endswith("Z")
     assert client.get("/api/v1/users/me").status_code == 401
     logged_in = login(client)
@@ -291,3 +292,53 @@ def test_built_frontend_serves_public_files(client):
     image = client.get("/guide/timetable-help/step-1.webp")
     assert image.status_code == 200 and image.headers["content-type"] == "image/webp"
     assert client.get("/guide/missing.webp").status_code == 404
+
+
+def set_language(client, language, origin=ORIGIN):
+    csrf = client.get("/api/v1/auth/csrf").json()["csrf_token"]
+    return client.put(
+        "/api/v1/users/me/language",
+        json={"language": language},
+        headers={"Origin": origin, "X-CSRF-Token": csrf},
+    )
+
+
+def test_language_is_saved_per_account(client):
+    assert set_language(client, "en").status_code == 401
+    register(client)
+    register(client, username="student_02")
+    login(client)
+    changed = set_language(client, "en")
+    assert changed.status_code == 200 and changed.json()["language"] == "en"
+    assert client.get("/api/v1/users/me").json()["language"] == "en"
+    assert set_language(client, "fr").status_code == 422
+    assert set_language(client, "zh", origin="https://evil.example").status_code == 403
+    login(client, username="student_02")
+    assert client.get("/api/v1/users/me").json()["language"] == "zh"
+
+
+def test_registration_can_start_in_english(client):
+    created = post(
+        client,
+        "/api/v1/auth/register",
+        {"username": "student_en", "password": PASSWORD, "language": "en"},
+    )
+    assert created.status_code == 201 and created.json()["language"] == "en"
+
+
+def test_error_messages_follow_the_page_language(client):
+    register(client)
+    csrf = client.get("/api/v1/auth/csrf").json()["csrf_token"]
+    headers = {"Origin": ORIGIN, "X-CSRF-Token": csrf}
+    body = {"username": "student_01", "password": "incorrect-password"}
+    chinese = client.post("/api/v1/auth/login", json=body, headers=headers)
+    assert chinese.json()["error"]["message"] == "账号或密码不正确。"
+    english = client.post(
+        "/api/v1/auth/login", json=body, headers={**headers, "X-HKM-Language": "en"}
+    )
+    assert english.status_code == 401
+    assert english.json()["error"] == {
+        "code": "INVALID_CREDENTIALS",
+        "message": "Incorrect username or password.",
+        "request_id": english.json()["error"]["request_id"],
+    }

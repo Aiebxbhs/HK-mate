@@ -37,6 +37,7 @@ from app.agent.skills import system_prompt
 from app.agent.tools import TOOLS
 from app.api import database
 from app.core.security import SESSION_COOKIE
+from app.i18n import request_language, tr
 from app.models import AgentMemory
 from app.schemas import ErrorOutput
 from app.services import AuthError
@@ -80,8 +81,15 @@ ERRORS = {
 }
 
 
-def error_message(code: str) -> str:
-    return ERRORS.get(code, "AI 助手暂时出错，请稍后再试。")
+def error_message(code: str, language: str = "zh") -> str:
+    return tr(ERRORS.get(code, "AI 助手暂时出错，请稍后再试。"), language)
+
+
+ENGLISH_PROMPT = (
+    "The user has set HK Mate to English. Reply in English unless the user writes in another "
+    "language. Tool results may be in Chinese; translate what you use. Keep official English "
+    "names as they are."
+)
 
 
 class ChatTurn(BaseModel):
@@ -177,16 +185,17 @@ def settings_of(request: Request) -> AgentSettings:
 @router.get("/status", response_model=AgentStatus)
 def status(request: Request, db: Session = Depends(database)) -> AgentStatus:
     services.current_user(db, request.cookies.get(SESSION_COOKIE))
+    language = request_language(request)
     settings = settings_of(request)
     problem = settings.problem()
     preset = settings.preset
     return AgentStatus(
         available=problem is None,
         provider=settings.provider,
-        provider_label=preset.label if preset else settings.provider,
+        provider_label=tr(preset.label, language) if preset else settings.provider,
         model=settings.model,
         problem=problem,
-        message=error_message(problem) if problem else "",
+        message=error_message(problem, language) if problem else "",
     )
 
 
@@ -197,6 +206,7 @@ def sse(event: str, data: dict) -> str:
 @router.post("/chat")
 def chat(body: ChatInput, request: Request, db: Session = Depends(database)) -> StreamingResponse:
     user = services.current_user(db, request.cookies.get(SESSION_COOKIE))
+    language = request_language(request)
     app = request.app
     vault = app.state.mail.vault
     if body.messages is not None:
@@ -232,10 +242,12 @@ def chat(body: ChatInput, request: Request, db: Session = Depends(database)) -> 
     messages = [
         Message("system", system_prompt(datetime.now(UTC))),
         Message("system", memory.memory_prompt(remembered)),
+        *([Message("system", ENGLISH_PROMPT)] if language == "en" else []),
         *history,
     ]
     context = {
         "user_id": user.id,
+        "language": language,
         "session_factory": app.state.session_factory,
         "weather": app.state.weather,
         "drafter": app.state.reply_drafter,
@@ -253,7 +265,7 @@ def chat(body: ChatInput, request: Request, db: Session = Depends(database)) -> 
     def step(name: str, state: str) -> None:
         label = TOOL_LABELS.get(name, name)
         if label:  # interface-only tools (quick replies, memory) are not shown as steps
-            events.put(sse("step", {"tool": name, "label": label, "state": state}))
+            events.put(sse("step", {"tool": name, "label": tr(label, language), "state": state}))
 
     def record(reply: dict) -> None:
         """Saves the assistant reply, then tidies history and memory after the answer."""
@@ -305,11 +317,13 @@ def chat(body: ChatInput, request: Request, db: Session = Depends(database)) -> 
                 }
             )
         except ModelError as exc:
-            events.put(sse("error", {"code": exc.code, "message": error_message(exc.code)}))
-            record({"role": "assistant", "content": "", "error": error_message(exc.code)})
+            message = error_message(exc.code, language)
+            events.put(sse("error", {"code": exc.code, "message": message}))
+            record({"role": "assistant", "content": "", "error": message})
         except Exception:  # noqa: BLE001 - report a fixed message, never internals
-            events.put(sse("error", {"code": "AGENT_FAILED", "message": error_message("")}))
-            record({"role": "assistant", "content": "", "error": error_message("")})
+            message = error_message("", language)
+            events.put(sse("error", {"code": "AGENT_FAILED", "message": message}))
+            record({"role": "assistant", "content": "", "error": message})
         finally:
             events.put(sse("done", {}))
             events.put(None)

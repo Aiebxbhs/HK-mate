@@ -13,6 +13,8 @@ class User(Base):
     display_name: Mapped[str] = mapped_column(String(60))
     password_hash: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Interface language, also used for summaries written in the background: "zh" or "en".
+    language: Mapped[str] = mapped_column(String(5), default="zh", server_default="zh")
     created_at: Mapped[int] = mapped_column(Integer)
     updated_at: Mapped[int] = mapped_column(Integer)
 

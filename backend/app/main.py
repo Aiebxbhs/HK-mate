@@ -26,6 +26,7 @@ from app.core.database import create_database
 from app.core.security import CSRF_COOKIE, valid_csrf
 from app.gmail import GoogleMailbox, TokenVault
 from app.guide_api import router as guide_router
+from app.i18n import request_language, tr
 from app.lecture_api import router as lecture_router
 from app.lecture_api import summary_router as lecture_summary_router
 from app.lecture_stream import LiveLectures, QwenTranslator, WhisperRecognizer
@@ -44,7 +45,11 @@ logger = logging.getLogger("hkumate")
 
 
 def error(request: Request, status: int, code: str, message: str, details=None) -> JSONResponse:
-    payload = {"code": code, "message": message, "request_id": request.state.request_id}
+    payload = {
+        "code": code,
+        "message": tr(message, request_language(request)),
+        "request_id": request.state.request_id,
+    }
     if details is not None:
         payload["details"] = details
     headers = {"Retry-After": "900"} if status == 429 else {}
