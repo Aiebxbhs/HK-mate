@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app import services
 from app.api import database
 from app.core.security import SESSION_COOKIE
+from app.i18n import request_language
 from app.lecture_summary import SUMMARY_VERSION, Line, MentionKind, Note, SummaryError
 from app.models import LectureRecord
 from app.schemas import ErrorOutput
@@ -367,6 +368,7 @@ def summarize_lecture(
         summary = request.app.state.lecture_summarizer.summarize(
             [Line(line.at_seconds, line.en) for line in body.lines],
             [Note(note.at_seconds, note.text.strip(), note.important) for note in body.notes],
+            request_language(request),
         )
     except SummaryError as exc:
         code = str(exc)

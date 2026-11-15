@@ -96,7 +96,7 @@ def test_live_summary_endpoint_checks_ownership_csrf_and_releases_model_lock(mai
     )
     calls = []
 
-    def summarize(mail):
+    def summarize(mail, language="zh"):
         calls.append(mail.id)
         return SummaryResult(
             EmailSummary(
@@ -125,7 +125,7 @@ def test_live_summary_endpoint_checks_ownership_csrf_and_releases_model_lock(mai
     finally:
         mailbox.app.state.summary_lock.release()
 
-    def timeout(mail):
+    def timeout(mail, language="zh"):
         raise SummaryError("SUMMARY_TIMEOUT")
 
     monkeypatch.setattr(mailbox.app.state.summarizer, "summarize", timeout)

@@ -29,7 +29,7 @@ NUM_CTX = 16384
 NUM_PREDICT = 1400
 # v4.1 keeps the v4 prompt text. A compressed v5 rewrite with few-shot examples scored
 # worse on a synthetic comparison (fewer extracted deadlines, weaker injection handling).
-PROMPT_VERSION = "mail-summary-v4.2"
+PROMPT_VERSION = "mail-summary-v4.3"
 SYSTEM_PROMPT = """你是 HKUmate 的邮件智能摘要助手。
 
 你的唯一任务是阅读用户提供的邮件数据，提取核心信息，并生成准确、简洁、自然的中文摘要。
@@ -374,6 +374,36 @@ CLASSIFY_PROMPT = """你是 HKUmate 的邮件分类助手，只负责阅读邮�
 然后填写 category。只输出符合 JSON Schema 的 JSON。"""
 UNVERIFIED_DEADLINE_NOTE = "有截止时间未能在原文中逐字核实，已省略，请以原邮件为准。"
 
+# English accounts: the same rules, with every explanatory text written in English. Category
+# values stay the Chinese labels, which the interface translates.
+ENGLISH_OUTPUT = """
+
+Output language (overrides the language rules above): write overview, key_points[].text,
+actions[].text and uncertainties in natural, concise English, not Chinese. overview is one
+English sentence or two (no more than 45 words). category must still be exactly one of the five
+Chinese labels listed above. actions.deadline is still copied verbatim from the source lines."""
+LIMITATIONS = {
+    "truncated": (
+        "正文超过本次输入上限，仅摘要前 10000 个字符。",
+        "The body is longer than the input limit; only the first 10,000 characters were read.",
+    ),
+    "empty": (
+        "邮件无可读取的正文，仅能根据主题概括。",
+        "The email has no readable body; this summary is based on the subject only.",
+    ),
+    "attachments": ("本次未读取附件内容。", "Attachments were not read."),
+    "deadline": (
+        UNVERIFIED_DEADLINE_NOTE,
+        "A deadline couldn't be verified word for word in the email and was left out; check "
+        "the original.",
+    ),
+}
+
+
+def summary_prompt(language: str) -> str:
+    prompt = f"{SYSTEM_PROMPT}\n{CLASSIFICATION_INSTRUCTIONS}"
+    return prompt + ENGLISH_OUTPUT if language == "en" else prompt
+
 
 def validate_conversational_overview(value: str) -> str:
     if re.search(r"[\r\n]|(?:发件人|目的|需要我做|截止时间)[:：]|^\s*(?:\d+[.、]|[-*] )", value):
@@ -383,6 +413,10 @@ def validate_conversational_overview(value: str) -> str:
 
 ConversationalOverview = Annotated[
     str, Field(min_length=1, max_length=160), AfterValidator(validate_conversational_overview)
+]
+# English sentences need more characters for the same content.
+EnglishOverview = Annotated[
+    str, Field(min_length=1, max_length=320), AfterValidator(validate_conversational_overview)
 ]
 
 
@@ -398,7 +432,7 @@ class SummaryAction(SummaryPoint):
 
 class EmailSummary(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    overview: ConversationalOverview
+    overview: EnglishOverview
     category: Annotated[MailCategory, BeforeValidator(current_category)] = "其他邮件"
     key_points: list[SummaryPoint] = Field(min_length=2, max_length=2)
     actions: list[SummaryAction] = Field(max_length=3)
@@ -430,6 +464,20 @@ class ModelSummary(BaseModel):
     actions: list[ModelAction] = Field(max_length=3)
     needs_reply: bool | None
     uncertainties: list[str] = Field(max_length=8)
+
+
+class EnglishModelPoint(ModelPoint):
+    text: str = Field(min_length=1, max_length=240)
+
+
+class EnglishModelAction(EnglishModelPoint):
+    deadline: str | None = Field(max_length=120)
+
+
+class EnglishModelSummary(ModelSummary):
+    overview: EnglishOverview
+    key_points: list[EnglishModelPoint] = Field(min_length=2, max_length=2)
+    actions: list[EnglishModelAction] = Field(max_length=3)
 
 
 def source_lines(subject: str, body: str, sender: str = "") -> list[str]:
@@ -477,7 +525,10 @@ class LocalMailSummarizer:
         # Fixed loopback endpoint, fixed local model, no proxy or redirect/cloud fallback.
         self.client = client
 
-    def summarize(self, mail: MailDetail) -> SummaryResult:
+    def summarize(self, mail: MailDetail, language: str = "zh") -> SummaryResult:
+        """Summary in the account's language ("zh" or "en"); the category label stays Chinese."""
+        english = language == "en"
+        schema = EnglishModelSummary if english else ModelSummary
         body = mail.body[:MAX_BODY_CHARS]
         truncated = len(mail.body) > len(body)
         lines = source_lines(mail.subject[:500], body, mail.sender[:500])
@@ -493,10 +544,10 @@ class LocalMailSummarizer:
             "model": MODEL,
             "stream": False,
             "messages": [
-                {"role": "system", "content": f"{SYSTEM_PROMPT}\n{CLASSIFICATION_INSTRUCTIONS}"},
+                {"role": "system", "content": summary_prompt(language)},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
             ],
-            "format": ModelSummary.model_json_schema(),
+            "format": schema.model_json_schema(),
             "options": {"temperature": 0, "num_ctx": NUM_CTX, "num_predict": NUM_PREDICT},
             "keep_alive": "10m",
         }
@@ -512,7 +563,7 @@ class LocalMailSummarizer:
             data = response.json()
             if not data.get("done") or data.get("done_reason") != "stop":
                 raise SummaryError("SUMMARY_INCOMPLETE")
-            generated = ModelSummary.model_validate_json(data["message"]["content"], strict=True)
+            generated = schema.model_validate_json(data["message"]["content"], strict=True)
             points = [
                 SummaryPoint(text=point.text, evidence=extract_evidence(point, lines))
                 for point in generated.key_points
@@ -539,15 +590,13 @@ class LocalMailSummarizer:
                 needs_reply=generated.needs_reply,
                 uncertainties=generated.uncertainties,
             )
-            limitations = []
-            if truncated:
-                limitations.append("正文超过本次输入上限，仅摘要前 10000 个字符。")
-            if not body.strip():
-                limitations.append("邮件无可读取的正文，仅能根据主题概括。")
-            if mail.attachments:
-                limitations.append("本次未读取附件内容。")
-            if dropped_deadline:
-                limitations.append(UNVERIFIED_DEADLINE_NOTE)
+            flags = {
+                "truncated": truncated,
+                "empty": not body.strip(),
+                "attachments": bool(mail.attachments),
+                "deadline": dropped_deadline,
+            }
+            limitations = [LIMITATIONS[key][int(english)] for key, on in flags.items() if on]
             result.uncertainties = list(dict.fromkeys([*limitations, *result.uncertainties]))[:8]
             return SummaryResult(
                 result,

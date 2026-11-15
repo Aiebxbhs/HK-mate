@@ -317,6 +317,7 @@ def draft_email(arguments: EmailRequest, context: dict) -> ToolResult:
                 tone=arguments.tone,
                 language=arguments.language,
                 signature=context.get("signature", ""),
+                interface=context.get("language", "zh"),
             )
         )
     except DraftError as exc:
