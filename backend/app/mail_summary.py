@@ -443,7 +443,7 @@ class EmailSummary(BaseModel):
 class ModelPoint(BaseModel):
     model_config = ConfigDict(extra="forbid")
     text: str = Field(min_length=1, max_length=120)
-    evidence_line_ids: list[int] = Field(min_length=1, max_length=3)
+    evidence_line_ids: list[Annotated[int, Field(ge=0)]] = Field(min_length=1, max_length=3)
 
 
 class MailClassification(BaseModel):
@@ -493,9 +493,12 @@ def source_lines(subject: str, body: str, sender: str = "") -> list[str]:
 
 
 def extract_evidence(point: ModelPoint, lines: list[str]) -> str:
-    if any(index < 0 or index >= len(lines) for index in point.evidence_line_ids):
+    """Quotes the cited source lines. A stray id next to valid ones is skipped; a point whose
+    ids are all invalid has no evidence and fails the summary."""
+    valid = [index for index in point.evidence_line_ids if 0 <= index < len(lines)]
+    if not valid:
         raise SummaryError("SUMMARY_UNSUPPORTED_EVIDENCE")
-    return "\n".join(lines[index] for index in dict.fromkeys(point.evidence_line_ids))
+    return "\n".join(lines[index] for index in dict.fromkeys(valid))
 
 
 def _squash(text: str) -> str:

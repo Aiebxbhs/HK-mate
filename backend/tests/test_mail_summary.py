@@ -264,3 +264,11 @@ def test_english_accounts_get_english_instructions_and_limits():
     assert result.summary.category == "学校邮件"
     assert UNVERIFIED_DEADLINE_NOTE not in result.summary.uncertainties
     assert any("couldn't be verified" in note for note in result.summary.uncertainties)
+
+
+def test_stray_evidence_id_next_to_valid_ones_is_skipped():
+    # Seen with the real model on an English summary of a Chinese email: ids [1, -1].
+    output = model_output()
+    output["key_points"][1]["evidence_line_ids"] = [2, 999]
+    result = mocked_agent(output).summarize(sample_mail())
+    assert result.summary.key_points[1].evidence == sample_mail().body

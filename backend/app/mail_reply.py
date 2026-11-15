@@ -33,8 +33,9 @@ REDACTION_NOTE = "草稿中的密码或验证码已移除，请勿通过邮件�
 # English interface: notes for the user are asked for in English, and placeholders are shown as
 # [To fill in: …]. The email itself still uses the language chosen for the draft.
 ENGLISH_NOTES = (
-    "\n\n界面语言为英文：missing_info 的每一条用英文写，【需补充：…】占位里的说明也用英文，"
-    "例如【需补充：preferred time】。邮件正文仍按 language 指定的语言写。"
+    '\n\n界面语言为英文：missing_info 的每一条写成一句完整的英文说明（例如 "Whether a group '
+    'of four is allowed"），不要带【需补充】标记；正文中【需补充：…】占位里的说明也用英文，例如'
+    "【需补充：preferred time】。邮件正文仍按 language 指定的语言写。"
 )
 ENGLISH_REDACTION_NOTE = (
     "Passwords or codes were removed from the draft. Never send this kind of information by email."
