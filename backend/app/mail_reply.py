@@ -30,6 +30,24 @@ SECRET_IN_INPUT = re.compile(
 )
 REDACTED = "【已移除：敏感信息】"
 REDACTION_NOTE = "草稿中的密码或验证码已移除，请勿通过邮件发送这类信息。"
+# English interface: notes for the user are asked for in English, and placeholders are shown as
+# [To fill in: …]. The email itself still uses the language chosen for the draft.
+ENGLISH_NOTES = (
+    '\n\n界面语言为英文：missing_info 的每一条写成一句完整的英文说明（例如 "Whether a group '
+    'of four is allowed"），不要带【需补充】标记；正文中【需补充：…】占位里的说明也用英文，例如'
+    "【需补充：preferred time】。邮件正文仍按 language 指定的语言写。"
+)
+ENGLISH_REDACTION_NOTE = (
+    "Passwords or codes were removed from the draft. Never send this kind of information by email."
+)
+
+
+def for_interface(text: str, interface: str) -> str:
+    """Shows the placeholders in the interface language."""
+    if interface != "en":
+        return text
+    text = text.replace(REDACTED, "[Removed: sensitive information]")
+    return re.sub(r"【需补充[:：]\s*([^】]*)】", lambda m: f"[To fill in: {m[1].strip()}]", text)
 
 
 def redact_secrets(user_text: str, *outputs: str) -> tuple[list[str], bool]:
@@ -143,6 +161,7 @@ class ComposeRequest:
     tone: ReplyTone = "formal"
     language: ReplyLanguage = "auto"
     signature: str = ""
+    interface: str = "zh"
 
 
 @dataclass
@@ -160,6 +179,7 @@ class ReplyRequest:
     tone: ReplyTone = "formal"
     language: ReplyLanguage = "auto"
     signature: str = ""
+    interface: str = "zh"
 
 
 @dataclass
@@ -260,7 +280,8 @@ class LocalReplyDrafter:
             "today": datetime.now(HONG_KONG).strftime("%Y-%m-%d (%A)"),
         }
         started = time.monotonic()
-        generated = self._generate(COMPOSE_SYSTEM_PROMPT, payload, ModelCompose)
+        prompt = COMPOSE_SYSTEM_PROMPT + (ENGLISH_NOTES if ask.interface == "en" else "")
+        generated = self._generate(prompt, payload, ModelCompose)
         subject = " ".join(generated.subject.split())
         subject = re.sub(r"^(re|fwd?|回复|转发)\s*[:：]\s*", "", subject, flags=re.IGNORECASE)
         if not subject:
@@ -272,10 +293,11 @@ class LocalReplyDrafter:
             f"{ask.purpose}\n{ask.recipient}", subject, body, *missing
         )
         if redacted:
-            missing = [REDACTION_NOTE, *missing][:5]
+            note = ENGLISH_REDACTION_NOTE if ask.interface == "en" else REDACTION_NOTE
+            missing = [note, *missing][:5]
         return ComposeDraft(
-            subject=subject[:200],
-            body=body,
+            subject=for_interface(subject[:200], ask.interface),
+            body=for_interface(body, ask.interface),
             missing_info=missing,
             elapsed_seconds=round(time.monotonic() - started, 2),
         )
@@ -300,14 +322,16 @@ class LocalReplyDrafter:
             "language": LANGUAGES[ask.language],
         }
         started = time.monotonic()
-        generated = self._generate(SYSTEM_PROMPT, payload, ModelReply)
+        prompt = SYSTEM_PROMPT + (ENGLISH_NOTES if ask.interface == "en" else "")
+        generated = self._generate(prompt, payload, ModelReply)
         text = finish_body(generated.body, ask.signature)
         missing = [item for raw in generated.missing_info if (item := clean_missing(raw))]
         (text, *missing), redacted = redact_secrets(ask.note, text, *missing)
         if redacted:
-            missing = [REDACTION_NOTE, *missing][:5]
+            note = ENGLISH_REDACTION_NOTE if ask.interface == "en" else REDACTION_NOTE
+            missing = [note, *missing][:5]
         return ReplyDraft(
-            body=text,
+            body=for_interface(text, ask.interface),
             missing_info=missing,
             to_address=address,
             to_name=name,

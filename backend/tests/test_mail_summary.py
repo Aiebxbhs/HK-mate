@@ -245,3 +245,30 @@ def test_classify_is_local_puts_overview_before_category_and_returns_only_the_la
         mocked_agent({"overview": "一封邮件。", "category": "课程作业发布"}).classify(sample_mail())
     with pytest.raises(SummaryError):
         mocked_agent({"overview": "一封邮件。"}).classify(sample_mail())
+
+
+def test_english_accounts_get_english_instructions_and_limits():
+    def inspect(request):
+        payload = json.loads(request.content)
+        system = payload["messages"][0]["content"]
+        assert system.startswith(SYSTEM_PROMPT)
+        assert "in natural, concise English" in system
+        assert "five\nChinese labels" in system
+        assert payload["format"]["properties"]["overview"]["maxLength"] == 320
+
+    output = model_output()
+    output["overview"] = "The library invites you to a workshop; sign up by 20 November."
+    output["actions"][0]["deadline"] = "2026-11-20"
+    result = mocked_agent(output, inspect_request=inspect).summarize(sample_mail(), "en")
+    assert result.summary.overview.startswith("The library")
+    assert result.summary.category == "学校邮件"
+    assert UNVERIFIED_DEADLINE_NOTE not in result.summary.uncertainties
+    assert any("couldn't be verified" in note for note in result.summary.uncertainties)
+
+
+def test_stray_evidence_id_next_to_valid_ones_is_skipped():
+    # Seen with the real model on an English summary of a Chinese email: ids [1, -1].
+    output = model_output()
+    output["key_points"][1]["evidence_line_ids"] = [2, 999]
+    result = mocked_agent(output).summarize(sample_mail())
+    assert result.summary.key_points[1].evidence == sample_mail().body

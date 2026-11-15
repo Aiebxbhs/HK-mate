@@ -103,8 +103,14 @@ def list_schedule(arguments: ScheduleQuery, context: dict) -> ToolResult:
     )
 
 
-def guide_sections() -> list[tuple[str, str]]:
-    text = GUIDE.read_text(encoding="utf-8").split("---", 2)[-1]
+def english_version(path: Path, language: str) -> Path:
+    """English translations live in an `en` folder beside the original, with the same name."""
+    english = path.parent / "en" / path.name
+    return english if language == "en" and english.is_file() else path
+
+
+def guide_sections(language: str = "zh") -> list[tuple[str, str]]:
+    text = english_version(GUIDE, language).read_text(encoding="utf-8").split("---", 2)[-1]
     sections = []
     for block in re.split(r"^## ", text, flags=re.MULTILINE)[1:]:
         title, _, body = block.partition("\n")
@@ -160,9 +166,10 @@ def frontmatter(text: str) -> tuple[dict, list[tuple[str, str]], str]:
     return fields, sources, body
 
 
-def load_knowledge() -> list[dict]:
+def load_knowledge(language: str = "zh") -> list[dict]:
     documents = []
-    for path in sorted(KNOWLEDGE_DIR.glob("*.md")):
+    for original in sorted(KNOWLEDGE_DIR.glob("*.md")):
+        path = english_version(original, language)
         fields, sources, body = frontmatter(path.read_text(encoding="utf-8"))
         for block in re.split(r"^## ", body, flags=re.MULTILINE)[1:]:
             heading, _, text = block.partition("\n")
@@ -205,7 +212,7 @@ def knowledge_search(arguments: KnowledgeQuery, context: dict) -> ToolResult:
     wanted = terms(expand(arguments.query))
     scores: dict[str, int] = {}
     sections: dict[str, list[dict]] = {}
-    for item in load_knowledge():
+    for item in load_knowledge(context.get("language", "zh")):
         if arguments.topic != "any" and item["topic"] != arguments.topic:
             continue
         sections.setdefault(item["document"], []).append(item)
@@ -256,7 +263,7 @@ class HelpQuery(BaseModel):
 def app_help(arguments: HelpQuery, context: dict) -> ToolResult:
     wanted = terms(arguments.question)
     scored = []
-    for title, body in guide_sections():
+    for title, body in guide_sections(context.get("language", "zh")):
         score = len(wanted & terms(title)) * 3 + len(wanted & terms(body))
         scored.append((score, title, body))
     scored.sort(key=lambda item: -item[0])
@@ -310,6 +317,7 @@ def draft_email(arguments: EmailRequest, context: dict) -> ToolResult:
                 tone=arguments.tone,
                 language=arguments.language,
                 signature=context.get("signature", ""),
+                interface=context.get("language", "zh"),
             )
         )
     except DraftError as exc:

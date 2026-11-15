@@ -7,12 +7,21 @@ import {
   readSignature,
   saveSignature,
 } from '../components/ReplyDraftPanel'
+import { tr } from '../i18n'
 
-const EXAMPLES = [
-  '问 Prof. Chan 能不能把 DASC7606 作业 2 延期一天，因为我这周生病了，可以提供医生证明',
-  '约小组成员这周四下午讨论项目分工，地点在图书馆讨论室',
-  '向教务处询问下学期选课时间和需要准备的材料',
-]
+const examples = () =>
+  tr(
+    [
+      '问 Prof. Chan 能不能把 DASC7606 作业 2 延期一天，因为我这周生病了，可以提供医生证明',
+      '约小组成员这周四下午讨论项目分工，地点在图书馆讨论室',
+      '向教务处询问下学期选课时间和需要准备的材料',
+    ],
+    [
+      'Ask Prof. Chan for a one-day extension on DASC7606 Assignment 2 because I was sick this week; I can provide a doctor’s note',
+      'Invite my group to meet this Thursday afternoon in a library discussion room to split the project work',
+      'Ask the faculty office when course selection opens next term and what I need to prepare',
+    ],
+  )
 
 /** A brand-new email from the user's own points. Nothing is sent from HK Mate. */
 export default function Compose() {
@@ -56,7 +65,7 @@ export default function Compose() {
   async function generate(event) {
     event.preventDefault()
     if (!purpose.trim()) {
-      setError('请先写下这封邮件要说的内容。')
+      setError(tr('请先写下这封邮件要说的内容。', 'Write what this email should say first.'))
       return
     }
     setLoading(true)
@@ -83,52 +92,60 @@ export default function Compose() {
   async function copy(text, label) {
     try {
       await navigator.clipboard.writeText(text)
-      setCopyState(`已复制${label}。`)
+      setCopyState(tr(`已复制${label}。`, `${label} copied.`))
     } catch {
-      setCopyState(`无法自动复制${label}，请手动选中后按 ⌘C。`)
+      setCopyState(
+        tr(
+          `无法自动复制${label}，请手动选中后按 ⌘C。`,
+          `Couldn't copy the ${label.toLowerCase()} automatically. Select it and press ⌘C.`,
+        ),
+      )
     }
   }
 
   return (
-    <section className="compose-page" aria-label="起草新邮件">
+    <section className="compose-page" aria-label={tr('起草新邮件', 'Draft a new email')}>
       <form className="agenda-card compose-form" onSubmit={generate}>
-        <h2 className="schedule-form-title">写给谁、说什么</h2>
+        <h2 className="schedule-form-title">{tr('写给谁、说什么', 'Who and what')}</h2>
         <div className="compose-row">
           <label>
-            收件人称呼（可选）
+            {tr('收件人称呼（可选）', 'Recipient name (optional)')}
             <input
               value={recipient}
               maxLength={100}
-              placeholder="例如：Prof. Chan、教务处、小组同学"
+              placeholder={tr(
+                '例如：Prof. Chan、教务处、小组同学',
+                'e.g. Prof. Chan, the faculty office, my group',
+              )}
               onChange={(event) => setRecipient(event.target.value)}
             />
           </label>
           <label>
-            收件人邮箱（可选）
+            {tr('收件人邮箱（可选）', 'Recipient address (optional)')}
             <input
               // Not type="email": a typo here must not block drafting; it only affects the link.
               inputMode="email"
               autoComplete="email"
               value={to}
               maxLength={254}
-              placeholder="只用于“在 Gmail 中打开”"
+              placeholder={tr('只用于“在 Gmail 中打开”', 'Used only for “Open in Gmail”')}
               onChange={(event) => setTo(event.target.value)}
             />
           </label>
         </div>
         <label className="reply-note">
-          想写的内容和要点
+          {tr('想写的内容和要点', 'What to say')}
           <textarea
             rows={4}
             maxLength={1000}
             value={purpose}
-            placeholder={`例如：${EXAMPLES[0]}`}
+            placeholder={tr(`例如：${examples()[0]}`, `e.g. ${examples()[0]}`)}
             onChange={(event) => setPurpose(event.target.value)}
           />
         </label>
         {!purpose && (
-          <div className="compose-examples" aria-label="示例">
-            {EXAMPLES.map((text) => (
+          <div className="compose-examples" aria-label={tr('示例', 'Examples')}>
+            {examples().map((text) => (
               <button key={text} type="button" onClick={() => setPurpose(text)}>
                 {text}
               </button>
@@ -137,26 +154,26 @@ export default function Compose() {
         )}
         <div className="reply-settings">
           <label>
-            语气
+            {tr('语气', 'Tone')}
             <select value={tone} onChange={(event) => setTone(event.target.value)}>
-              <option value="formal">正式</option>
-              <option value="friendly">友好</option>
+              <option value="formal">{tr('正式', 'Formal')}</option>
+              <option value="friendly">{tr('友好', 'Friendly')}</option>
             </select>
           </label>
           <label>
-            语言
+            {tr('语言', 'Language')}
             <select value={language} onChange={(event) => setLanguage(event.target.value)}>
-              <option value="auto">跟随要点</option>
-              <option value="zh">中文</option>
+              <option value="auto">{tr('跟随要点', 'Same as my points')}</option>
+              <option value="zh">{tr('中文', 'Chinese')}</option>
               <option value="en">English</option>
             </select>
           </label>
           <label>
-            署名
+            {tr('署名', 'Sign as')}
             <input
               value={signature}
               maxLength={60}
-              placeholder="例如：Sam"
+              placeholder={tr('例如：Sam', 'e.g. Sam')}
               onChange={(event) => {
                 setSignature(event.target.value)
                 saveSignature(event.target.value)
@@ -168,18 +185,26 @@ export default function Compose() {
           <button type="submit" className="mail-primary" disabled={loading}>
             <Icon name="spark" size={16} aria-hidden="true" />
             {loading
-              ? '正在起草…'
+              ? tr('正在起草…', 'Drafting…')
               : draft
                 ? edited
-                  ? '重新生成（会覆盖修改）'
-                  : '重新生成'
-                : '生成草稿'}
+                  ? tr('重新生成（会覆盖修改）', 'Regenerate (replaces your edits)')
+                  : tr('重新生成', 'Regenerate')
+                : tr('生成草稿', 'Draft')}
           </button>
-          <span>本地 Qwen 生成，只起草，不会发送；收件人邮箱不会发送给模型</span>
+          <span>
+            {tr(
+              '本地 Qwen 生成，只起草，不会发送；收件人邮箱不会发送给模型',
+              'Drafted by local Qwen and never sent; the recipient address is not shown to the model',
+            )}
+          </span>
         </div>
         {loading && (
           <p className="reply-status" role="status">
-            正在本机起草邮件，通常需要 10–20 秒…
+            {tr(
+              '正在本机起草邮件，通常需要 10–20 秒…',
+              'Drafting on this computer; usually 10–20 seconds…',
+            )}
           </p>
         )}
         {error && (
@@ -190,10 +215,10 @@ export default function Compose() {
       </form>
 
       {draft && (
-        <section className="agenda-card compose-result" aria-label="邮件草稿">
-          <h2 className="schedule-form-title">草稿</h2>
+        <section className="agenda-card compose-result" aria-label={tr('邮件草稿', 'Email draft')}>
+          <h2 className="schedule-form-title">{tr('草稿', 'Draft')}</h2>
           <label>
-            主题
+            {tr('主题', 'Subject')}
             <input
               value={subject}
               maxLength={200}
@@ -201,7 +226,7 @@ export default function Compose() {
             />
           </label>
           <label className="reply-editor">
-            正文
+            {tr('正文', 'Body')}
             <textarea
               rows={12}
               value={body}
@@ -213,11 +238,14 @@ export default function Compose() {
           </label>
           {placeholders.length > 0 && (
             <p className="reply-warning" role="status">
-              还有 {placeholders.length} 处需要你补充：{placeholders.join('、')}
+              {tr(
+                `还有 ${placeholders.length} 处需要你补充：${placeholders.join('、')}`,
+                `${placeholders.length} to fill in: ${placeholders.join(', ')}`,
+              )}
             </p>
           )}
           {draft.missing_info.length > 0 && (
-            <ul className="reply-checklist" aria-label="发送前请核实">
+            <ul className="reply-checklist" aria-label={tr('发送前请核实', 'Check before sending')}>
               {draft.missing_info.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -225,7 +253,7 @@ export default function Compose() {
           )}
           <div className="compose-send">
             <label>
-              发件邮箱
+              {tr('发件邮箱', 'From')}
               <select
                 value={from}
                 disabled={!mailboxes.length}
@@ -238,19 +266,31 @@ export default function Compose() {
                     </option>
                   ))
                 ) : (
-                  <option value="">尚未连接 Gmail</option>
+                  <option value="">{tr('尚未连接 Gmail', 'No Gmail connected')}</option>
                 )}
               </select>
             </label>
-            {!toValid && <p className="schedule-error">收件人邮箱格式不正确。</p>}
+            {!toValid && (
+              <p className="schedule-error">
+                {tr('收件人邮箱格式不正确。', "The recipient address isn't valid.")}
+              </p>
+            )}
           </div>
           <div className="reply-actions">
-            <button type="button" className="mail-secondary" onClick={() => copy(subject, '主题')}>
-              复制主题
+            <button
+              type="button"
+              className="mail-secondary"
+              onClick={() => copy(subject, tr('主题', 'Subject'))}
+            >
+              {tr('复制主题', 'Copy subject')}
             </button>
-            <button type="button" className="mail-secondary" onClick={() => copy(body, '正文')}>
+            <button
+              type="button"
+              className="mail-secondary"
+              onClick={() => copy(body, tr('正文', 'Body'))}
+            >
               <Icon name="check" size={16} aria-hidden="true" />
-              复制正文
+              {tr('复制正文', 'Copy body')}
             </button>
             {from && toValid ? (
               <a
@@ -259,11 +299,17 @@ export default function Compose() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Icon name="mail" size={16} aria-hidden="true" />在 Gmail 中打开
+                <Icon name="mail" size={16} aria-hidden="true" />
+                {tr('在 Gmail 中打开', 'Open in Gmail')}
               </a>
             ) : (
               <span className="reply-note-text">
-                {from ? '请先改正收件人邮箱。' : '在“邮箱管理”连接 Gmail 后，可在 Gmail 中打开。'}
+                {from
+                  ? tr('请先改正收件人邮箱。', 'Fix the recipient address first.')
+                  : tr(
+                      '在“邮箱管理”连接 Gmail 后，可在 Gmail 中打开。',
+                      'Connect Gmail in Mailboxes to open the draft in Gmail.',
+                    )}
               </span>
             )}
           </div>
@@ -273,7 +319,10 @@ export default function Compose() {
             </p>
           )}
           <p className="reply-note-text">
-            草稿由本地模型生成，发送前请逐句核对，并在 Gmail 中确认收件人后自行发送。
+            {tr(
+              '草稿由本地模型生成，发送前请逐句核对，并在 Gmail 中确认收件人后自行发送。',
+              'Drafted by the local model. Check every sentence, confirm the recipient in Gmail, and send it yourself.',
+            )}
           </p>
         </section>
       )}

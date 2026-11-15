@@ -1,0 +1,461 @@
+{
+  "verified": "2026-11-14",
+  "sources": [
+    {
+      "label": "HKU Libraries: Main Library Floor Plans",
+      "url": "https://lib.hku.hk/mainlib/floorplan.html"
+    },
+    {
+      "label": "HKU Libraries: Main Library Facilities and Services",
+      "url": "https://lib.hku.hk/mainlib/facilities.html"
+    },
+    {
+      "label": "HKU Libraries: Main Library Study Places",
+      "url": "https://lib.hku.hk/mainlib/studyplace.html"
+    },
+    {
+      "label": "HKU Libraries: Main Library Collection Locations",
+      "url": "https://lib.hku.hk/general/location/main_library.html"
+    },
+    {
+      "label": "HKU Libraries: Copy, Print, Scan",
+      "url": "https://lib.hku.hk/techsupport/photocopy.html"
+    },
+    {
+      "label": "HKU Libraries: Level 3 Zones",
+      "url": "https://lib.hku.hk/level3/zones.html"
+    },
+    {
+      "label": "HKU Libraries: Main Library Overview and Service Counters",
+      "url": "https://lib.hku.hk/mainlib/index.html"
+    }
+  ],
+  "library": {
+    "name": "Main Library",
+    "intro": "The Main Library is in the Library Building, with the Old Wing (opened 1961) and the New Wing (opened 1991); Level 3 is on 3/F. It has over 1,900 seats, with study tables on every floor.",
+    "floors": [
+      {
+        "id": "6",
+        "label": "6/F",
+        "wings": [
+          "Old Wing"
+        ],
+        "spots": [
+          {
+            "kind": "collection",
+            "wing": "Old Wing",
+            "name": "Fung Ping Shan Library",
+            "text": "Part of the Chinese library: Chinese and Japanese books, call numbers DS741–Z."
+          }
+        ],
+        "printers": [
+          {
+            "number": "20",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": true
+          }
+        ]
+      },
+      {
+        "id": "5",
+        "label": "5/F",
+        "wings": [
+          "Old Wing"
+        ],
+        "spots": [
+          {
+            "kind": "collection",
+            "wing": "Old Wing",
+            "name": "Fung Ping Shan Library",
+            "text": "Chinese and Japanese books, call numbers A–DS740, plus oversized books and large series."
+          }
+        ],
+        "printers": [
+          {
+            "number": "24",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": true
+          }
+        ]
+      },
+      {
+        "id": "4",
+        "label": "4/F",
+        "wings": [
+          "Old Wing",
+          "New Wing"
+        ],
+        "spots": [
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Bookable study tables",
+            "text": "64 seats on 4/F can be booked online (Book a Study Table); rules are in the Booking Policy."
+          },
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Single Study Rooms",
+            "text": "HKU / SPACE students and staff can book them in the Facilities Booking System: 3 sessions a day, bookable one session ahead; released if you don't check in within 60 minutes of the start."
+          },
+          {
+            "kind": "collection",
+            "wing": "Old Wing",
+            "name": "Western-language books 001–299",
+            "text": "Also Education Collection books, and Fung Ping Shan Library Chinese reference books and periodicals."
+          },
+          {
+            "kind": "collection",
+            "wing": "New Wing",
+            "name": "Western-language books 300–399",
+            "text": "Plus reference books and periodicals for 001–399."
+          }
+        ],
+        "printers": [
+          {
+            "number": "17",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "label": "3/F",
+        "wings": [
+          "Old Wing",
+          "New Wing"
+        ],
+        "spots": [
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Tin Ka Ping Education Library (discussion rooms)",
+            "text": "18 discussion rooms are booked online, up to 2 hours per person per day, released if you don't check in within 15 minutes of the start; there are also collaborative areas that need no booking. Laptops for the rooms can be borrowed at the 2/F Lending Services Counter."
+          },
+          {
+            "kind": "tech",
+            "wing": null,
+            "name": "Technology Zone",
+            "text": "Over 100 computers, bookable online, with Microsoft Office, EndNote and more; some have SPSS, NVivo and scanners (A3 flatbed scanning: computers 66 and 73)."
+          },
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Study Zone (quiet study)",
+            "text": "Various single seats for quiet study; quiet discussion is allowed in the other Level 3 zones."
+          },
+          {
+            "kind": "collection",
+            "wing": null,
+            "name": "Ko Wong Wai Ching Wendy Fine Arts Digital Library",
+            "text": "The fine arts digital library, also on Level 3."
+          }
+        ],
+        "printers": [
+          {
+            "number": "L3-4",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-5",
+            "wing": "New Wing",
+            "print_mode": "colour",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-6",
+            "wing": "New Wing",
+            "print_mode": "colour",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-7",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-8",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-9",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-10",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-2",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-1",
+            "wing": "Old Wing",
+            "print_mode": "colour",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "label": "2/F",
+        "wings": [
+          "Old Wing",
+          "New Wing"
+        ],
+        "spots": [
+          {
+            "kind": "service",
+            "wing": "New Wing",
+            "name": "Lending Services Counter",
+            "text": "Borrow and return books, collect requested items and interlibrary loans; borrow laptops, tablets, noise-cancelling headphones and other equipment. The Add Value Machine next to it tops up your print quota with Octopus."
+          },
+          {
+            "kind": "service",
+            "wing": null,
+            "name": "Enquiries Counter",
+            "text": "Library membership, reader cards for access to other non-UGC libraries, and more."
+          },
+          {
+            "kind": "service",
+            "wing": "New Wing",
+            "name": "Self-Service Collection",
+            "text": "Tap your student card to enter and pick up course reserve items and books you requested (arranged by surname); there is an A3 overhead scanner inside."
+          },
+          {
+            "kind": "tech",
+            "wing": "New Wing",
+            "name": "Battery Charging Stations",
+            "text": "Next to the Atrium, with Type-C, Lightning and Micro-B cables for 7 devices at once; please keep to 30 minutes when others are waiting."
+          },
+          {
+            "kind": "tech",
+            "wing": null,
+            "name": "Ingenium",
+            "text": "An interdisciplinary technology space with exhibition and event areas, the Library Innovation Centre and Tech@Ingenium."
+          },
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Special Study Room",
+            "text": "For students with visual impairments, with screen readers and braille equipment; students registered with CEDARS tap their card to enter."
+          },
+          {
+            "kind": "collection",
+            "wing": "Old Wing",
+            "name": "Western-language books 900–999",
+            "text": "Plus reference books and periodicals in the same range."
+          }
+        ],
+        "printers": [
+          {
+            "number": "5",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": true
+          },
+          {
+            "number": "32",
+            "wing": "Old Wing",
+            "print_mode": "colour",
+            "copy_mode": "colour",
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "11",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "30",
+            "wing": "New Wing",
+            "print_mode": "colour",
+            "copy_mode": "colour",
+            "wifi": true,
+            "scan": true
+          },
+          {
+            "number": "31",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          }
+        ]
+      },
+      {
+        "id": "1",
+        "label": "1/F",
+        "wings": [
+          "Old Wing",
+          "New Wing"
+        ],
+        "spots": [
+          {
+            "kind": "collection",
+            "wing": "New Wing",
+            "name": "AV Collection",
+            "text": "Audio-visual materials, plus reference books and periodicals for 400–599."
+          },
+          {
+            "kind": "collection",
+            "wing": "New Wing",
+            "name": "Special Collections",
+            "text": "Hong Kong materials, microforms, rare books and WTO materials; some items must be requested at the Special Collections Counter."
+          },
+          {
+            "kind": "service",
+            "wing": null,
+            "name": "HKU Archives",
+            "text": "1/F Rm 114–117, for use in the library only; email to request materials before you visit."
+          },
+          {
+            "kind": "collection",
+            "wing": "Old Wing",
+            "name": "Western-language books 400–599, 700–799",
+            "text": "Also the Music Collection (books, scores and audio-visual materials)."
+          }
+        ],
+        "printers": [
+          {
+            "number": "13",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "15",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "33",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": true
+          }
+        ]
+      },
+      {
+        "id": "G",
+        "label": "G/F",
+        "wings": [
+          "Old Wing",
+          "New Wing"
+        ],
+        "spots": [
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Library 24 Study Hub",
+            "text": "Separate from the main library and open 24 hours to HKU staff and students, with its entrance facing the Sun Yat-sen Steps; for emergencies after the library closes, call the Security Control Centre on 3917-2882."
+          },
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Think Tank",
+            "text": "Enter by the G/F Ancillary Entrance: first the Social Space and Leisure Study Space, then further in the Quiet Study Space and Deep Quiet Study Space, plus the Special Collections Joseph Needham Room and a Seminar Room."
+          },
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Research Carrels",
+            "text": "With lockers, for HKU higher degree students on master's or doctoral programmes only; allocated by half-month through an online application and ballot, and you must check in within the first 3 days; ask at the 2/F counter for details."
+          },
+          {
+            "kind": "tech",
+            "wing": null,
+            "name": "E-Learning Lab",
+            "text": "A small multi-purpose lecture room with 46 seats, each with a networked computer, used for library talks and seminars."
+          },
+          {
+            "kind": "collection",
+            "wing": "New Wing",
+            "name": "Western-language books 600–699, 800–899",
+            "text": "Also oversized books and the Leisure Reading Collection."
+          }
+        ],
+        "printers": [
+          {
+            "number": "1",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "8",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "23",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": true
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app import mail_categories, services
 from app.api import database
 from app.core.security import SESSION_COOKIE
+from app.i18n import request_language, tr
 from app.mail_summary import EmailSummary
 from app.models import EmailConnection, MailNotification, MailWatch
 from app.schemas import ErrorOutput
@@ -107,6 +108,7 @@ def notifications(
         codes.append("MAIL_REAUTHORIZE")
     if request.app.state.monitor.error_code:
         codes.append(request.app.state.monitor.error_code)
+    language = request_language(request)
     items = []
     labels = mail_categories.lookup(
         db, owner, [(row.connection_id, row.message_id) for row in rows[:100]]
@@ -126,7 +128,7 @@ def notifications(
                 status=row.status,
                 summary=payload.get("summary"),
                 category=labels.get((row.connection_id, row.message_id), {}).get("category"),
-                error=error_message(row.error_code) if row.error_code else None,
+                error=tr(error_message(row.error_code), language) if row.error_code else None,
             )
         )
         item = items[-1]
@@ -146,7 +148,7 @@ def notifications(
         )
         or 0,
         last_checked_at=datetime.fromtimestamp(checked, UTC) if checked else None,
-        errors=list(dict.fromkeys(error_message(code) for code in codes)),
+        errors=list(dict.fromkeys(tr(error_message(code), language) for code in codes)),
         items=items,
         next_cursor=rows[99].id if len(rows) > 100 else None,
     )

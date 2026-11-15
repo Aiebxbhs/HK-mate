@@ -4,6 +4,7 @@ import Icon from '../components/Icon'
 import LectureSummaryView from '../components/LectureSummaryView'
 import { startLectureStream } from '../components/lecture-stream'
 import { formatDuration, formatElapsed, hkClock } from '../components/lecture-time'
+import { tr } from '../i18n'
 
 // In-progress lectures are kept only in this browser (per account) until the user saves or
 // discards them, so a refresh or an accidental close does not lose notes.
@@ -69,7 +70,10 @@ function NoteItem({ note, startedAt, onChange, onDelete }) {
   const at = new Date(new Date(startedAt).getTime() + note.at_seconds * 1000)
   return (
     <li className={`lecture-note${note.important ? ' is-important' : ''}`}>
-      <span className="lecture-note-time" title={`香港时间 ${hkClock(at)}`}>
+      <span
+        className="lecture-note-time"
+        title={tr(`香港时间 ${hkClock(at)}`, `Hong Kong time ${hkClock(at)}`)}
+      >
         {formatElapsed(note.at_seconds)}
       </span>
       {editing ? (
@@ -82,14 +86,14 @@ function NoteItem({ note, startedAt, onChange, onDelete }) {
           }}
         >
           <textarea
-            aria-label="编辑笔记"
+            aria-label={tr('编辑笔记', 'Edit note')}
             rows={2}
             value={text}
             maxLength={2000}
             onChange={(event) => setText(event.target.value)}
           />
           <button type="submit" className="mail-secondary">
-            完成
+            {tr('完成', 'Done')}
           </button>
         </form>
       ) : (
@@ -99,18 +103,18 @@ function NoteItem({ note, startedAt, onChange, onDelete }) {
         <button
           type="button"
           aria-pressed={note.important}
-          aria-label={note.important ? '取消重点' : '标为重点'}
+          aria-label={note.important ? tr('取消重点', 'Unmark key') : tr('标为重点', 'Mark as key')}
           onClick={() => onChange({ ...note, important: !note.important })}
         >
-          {note.important ? '重点' : '标为重点'}
+          {note.important ? tr('重点', 'Key') : tr('标为重点', 'Mark as key')}
         </button>
         {!editing && (
           <button type="button" onClick={() => setEditing(true)}>
-            编辑
+            {tr('编辑', 'Edit')}
           </button>
         )}
         <button type="button" className="danger-text" onClick={onDelete}>
-          删除
+          {tr('删除', 'Delete')}
         </button>
       </div>
     </li>
@@ -121,7 +125,9 @@ function NoteItem({ note, startedAt, onChange, onDelete }) {
 export function summaryEstimate(captions) {
   const words = captions.reduce((total, caption) => total + caption.en.split(/\s+/).length, 0)
   const seconds = Math.ceil(words / 2500) * 35 + 25
-  return seconds < 90 ? '不到 1 分钟' : `约 ${Math.round(seconds / 60)} 分钟`
+  const minutes = Math.round(seconds / 60)
+  if (seconds < 90) return tr('不到 1 分钟', 'under a minute')
+  return tr(`约 ${minutes} 分钟`, `about ${minutes} minutes`)
 }
 
 /**
@@ -198,26 +204,30 @@ function SummaryOption({ captions, summary, keep, onKeep }) {
             disabled={!fresh}
             onChange={(event) => onKeep(event.target.checked)}
           />
-          AI 摘要与重点
+          {tr('AI 摘要与重点', 'AI summary and key points')}
         </label>
         {fresh && (
           <button type="button" className="text-button" disabled={generating} onClick={retry}>
-            重新生成
+            {tr('重新生成', 'Regenerate')}
           </button>
         )}
       </div>
       {!captions.length && (
         <p className="reply-status" role="status">
-          这节课没有录音字幕，无法生成 AI 摘要。
+          {tr(
+            '这节课没有录音字幕，无法生成 AI 摘要。',
+            'This lecture has no recorded captions, so no AI summary can be made.',
+          )}
         </p>
       )}
       {failed && !generating && (
         <p className="message error" role="alert">
-          摘要生成失败：{failure.message}
+          {tr('摘要生成失败：', 'Summary failed: ')}
+          {failure.message}
           <button type="button" className="text-button" onClick={retry}>
-            重试
+            {tr('重试', 'Retry')}
           </button>
-          仍可只保存笔记。
+          {tr('仍可只保存笔记。', 'You can still save just the notes.')}
         </p>
       )}
       {fresh && !generating && <LectureSummaryView summary={fresh} />}
@@ -252,7 +262,7 @@ function SaveForm({ draft, courseNames, busy, onSummary, onBack, onSaved, onDisc
   async function save(event) {
     event.preventDefault()
     if (!info.course_name.trim()) {
-      setError('请填写课程名称。')
+      setError(tr('请填写课程名称。', 'Please enter the course name.'))
       return
     }
     setSaving(true)
@@ -284,27 +294,38 @@ function SaveForm({ draft, courseNames, busy, onSummary, onBack, onSaved, onDisc
 
   const update = (field) => (event) => setInfo({ ...info, [field]: event.target.value })
   return (
-    <form className="agenda-card lecture-save" onSubmit={save} aria-label="保存课程">
-      <h2 className="schedule-form-title">课程已结束</h2>
+    <form
+      className="agenda-card lecture-save"
+      onSubmit={save}
+      aria-label={tr('保存课程', 'Save lecture')}
+    >
+      <h2 className="schedule-form-title">{tr('课程已结束', 'Lecture ended')}</h2>
       <p className="lecture-save-meta">
-        {hkClock(draft.startedAt)}–{hkClock(draft.endedAt)}，时长 {formatDuration(duration)}，
-        {draft.notes.length} 条笔记，录音 {formatDuration(recordedSeconds(draft.segments))}
+        {tr(
+          `${hkClock(draft.startedAt)}–${hkClock(draft.endedAt)}，时长 ${formatDuration(duration)}，${draft.notes.length} 条笔记，录音 ${formatDuration(recordedSeconds(draft.segments))}`,
+          `${hkClock(draft.startedAt)}–${hkClock(draft.endedAt)}, ${formatDuration(duration)}, ${draft.notes.length} notes, ${formatDuration(recordedSeconds(draft.segments))} recorded`,
+        )}
       </p>
       {waitingForSummary && (
         <p className="lecture-summary-banner" role="status">
           <span className="lecture-summary-spinner" aria-hidden="true" />
-          AI 课程摘要正在生成，请稍等（
-          {busy ? '正在处理最后一句字幕' : `预计${summaryEstimate(captions)}`}
-          ）。可以先填写下面的课程信息。
+          {tr('AI 课程摘要正在生成，请稍等（', 'The AI lecture summary is being written (')}
+          {busy
+            ? tr('正在处理最后一句字幕', 'finishing the last caption')
+            : tr(`预计${summaryEstimate(captions)}`, summaryEstimate(captions))}
+          {tr(
+            '）。可以先填写下面的课程信息。',
+            '). You can fill in the course details below meanwhile.',
+          )}
         </p>
       )}
       <label>
-        课程名称（必填）
+        {tr('课程名称（必填）', 'Course name (required)')}
         <input
           list="lecture-course-names"
           value={info.course_name}
           maxLength={100}
-          placeholder="例如：Deep Learning"
+          placeholder={tr('例如：Deep Learning', 'e.g. Deep Learning')}
           onChange={update('course_name')}
         />
         <datalist id="lecture-course-names">
@@ -314,24 +335,27 @@ function SaveForm({ draft, courseNames, busy, onSummary, onBack, onSaved, onDisc
         </datalist>
       </label>
       <label>
-        其他信息（可选）
+        {tr('其他信息（可选）', 'Other information (optional)')}
         <textarea
           rows={3}
           maxLength={2000}
           value={info.extra_info}
-          placeholder="例如：第 9 周、本节主题、要复习的章节…"
+          placeholder={tr(
+            '例如：第 9 周、本节主题、要复习的章节…',
+            'e.g. Week 9, today’s topic, chapters to review…',
+          )}
           onChange={update('extra_info')}
         />
       </label>
       <fieldset className="lecture-save-options">
-        <legend>保存哪些内容</legend>
+        <legend>{tr('保存哪些内容', 'What to save')}</legend>
         <label>
           <input
             type="checkbox"
             checked={keepNotes}
             onChange={(event) => setKeepNotes(event.target.checked)}
           />
-          我的笔记（{draft.notes.length} 条）
+          {tr(`我的笔记（${draft.notes.length} 条）`, `My notes (${draft.notes.length})`)}
         </label>
         <SummaryOption
           captions={captions}
@@ -346,7 +370,10 @@ function SaveForm({ draft, courseNames, busy, onSummary, onBack, onSaved, onDisc
             disabled={!captions.length}
             onChange={(event) => setKeepTranscript(event.target.checked)}
           />
-          逐句转写与译文（{captions.length} 句）
+          {tr(
+            `逐句转写与译文（${captions.length} 句）`,
+            `Transcript and translation (${captions.length} lines)`,
+          )}
         </label>
       </fieldset>
       {error && (
@@ -356,13 +383,22 @@ function SaveForm({ draft, courseNames, busy, onSummary, onBack, onSaved, onDisc
       )}
       <div className="schedule-form-actions lecture-save-actions">
         {confirmDiscard ? (
-          <span className="schedule-confirm" role="group" aria-label="确认丢弃本节课">
-            <span>丢弃后笔记无法恢复，确定吗？</span>
+          <span
+            className="schedule-confirm"
+            role="group"
+            aria-label={tr('确认丢弃本节课', 'Confirm discarding this lecture')}
+          >
+            <span>
+              {tr(
+                '丢弃后笔记无法恢复，确定吗？',
+                "Discarded notes can't be recovered. Are you sure?",
+              )}
+            </span>
             <button type="button" className="danger-text" onClick={onDiscard}>
-              丢弃
+              {tr('丢弃', 'Discard')}
             </button>
             <button type="button" onClick={() => setConfirmDiscard(false)}>
-              取消
+              {tr('取消', 'Cancel')}
             </button>
           </span>
         ) : (
@@ -371,27 +407,27 @@ function SaveForm({ draft, courseNames, busy, onSummary, onBack, onSaved, onDisc
             className="mail-preview-ignore"
             onClick={() => setConfirmDiscard(true)}
           >
-            不保存，丢弃
+            {tr('不保存，丢弃', "Don't save, discard")}
           </button>
         )}
         <button type="button" className="mail-secondary" onClick={onBack} disabled={saving}>
-          返回课程
+          {tr('返回课程', 'Back to lecture')}
         </button>
         <button type="submit" className="mail-primary" disabled={saving}>
-          {saving ? '正在保存…' : '保存到课程记录'}
+          {saving ? tr('正在保存…', 'Saving…') : tr('保存到课程记录', 'Save to lecture records')}
         </button>
       </div>
     </form>
   )
 }
 
-const STATE_LABELS = {
-  off: '未在录音',
-  connecting: '正在连接…',
-  loading: '正在加载语音模型…',
-  listening: '正在聆听',
-  stopping: '正在处理最后一句…',
-}
+const stateLabels = () => ({
+  off: tr('未在录音', 'Not recording'),
+  connecting: tr('正在连接…', 'Connecting…'),
+  loading: tr('正在加载语音模型…', 'Loading the speech model…'),
+  listening: tr('正在聆听', 'Listening'),
+  stopping: tr('正在处理最后一句…', 'Finishing the last sentence…'),
+})
 
 function Captions({ captions, interim, recState, level }) {
   const list = useRef(null)
@@ -401,16 +437,16 @@ function Captions({ captions, interim, recState, level }) {
     if (element && follow.current) element.scrollTop = element.scrollHeight
   }, [captions, interim])
   return (
-    <section className="agenda-card lecture-captions" aria-label="实时字幕">
+    <section className="agenda-card lecture-captions" aria-label={tr('实时字幕', 'Live captions')}>
       <h2 className="schedule-form-title lecture-captions-title">
-        实时字幕
+        {tr('实时字幕', 'Live captions')}
         <span className={`lecture-rec-state is-${recState}`} role="status">
           {recState === 'listening' && (
             <span className="lecture-level" aria-hidden="true">
               <span style={{ transform: `scaleX(${Math.max(0.04, level)})` }} />
             </span>
           )}
-          {STATE_LABELS[recState]}
+          {stateLabels()[recState]}
         </span>
       </h2>
       {captions.length || interim ? (
@@ -430,9 +466,9 @@ function Captions({ captions, interim, recState, level }) {
               </p>
               <p className={`lecture-caption-zh is-${caption.status}`} lang="zh-CN">
                 {caption.status === 'pending'
-                  ? '翻译中…'
+                  ? tr('翻译中…', 'Translating…')
                   : caption.status === 'failed'
-                    ? '（这句没有翻译成功）'
+                    ? tr('（这句没有翻译成功）', '(This sentence was not translated)')
                     : caption.zh}
               </p>
             </li>
@@ -443,7 +479,7 @@ function Captions({ captions, interim, recState, level }) {
               <p className="lecture-caption-en" lang="en">
                 {interim.en}
               </p>
-              <p className="lecture-caption-zh is-pending">正在听…</p>
+              <p className="lecture-caption-zh is-pending">{tr('正在听…', 'Listening…')}</p>
             </li>
           )}
         </ol>
@@ -452,8 +488,11 @@ function Captions({ captions, interim, recState, level }) {
           <Icon name="mic" size={22} aria-hidden="true" />
           <p>
             {recState === 'off'
-              ? '点击“开始录音”后，老师的英文讲话和中文翻译会逐句显示在这里。'
-              : '正在等待老师开口…'}
+              ? tr(
+                  '点击“开始录音”后，老师的英文讲话和中文翻译会逐句显示在这里。',
+                  'After you click “Start recording”, the lecturer’s English and the Chinese translation appear here sentence by sentence.',
+                )
+              : tr('正在等待老师开口…', 'Waiting for the lecturer to speak…')}
           </p>
         </div>
       )}
@@ -667,12 +706,15 @@ export default function LectureLive({ user, onOpenRecords }) {
 
   if (!draft) {
     return (
-      <section className="lecture-page" aria-label="课程实时翻译">
+      <section className="lecture-page" aria-label={tr('课程实时翻译', 'Live lecture translation')}>
         {saved && (
           <p className="message success" role="status">
-            已保存到课程记录：{saved.course_name}。
+            {tr(
+              `已保存到课程记录：${saved.course_name}。`,
+              `Saved to lecture records: ${saved.course_name}.`,
+            )}
             <button type="button" className="text-button" onClick={onOpenRecords}>
-              查看课程记录
+              {tr('查看课程记录', 'View lecture records')}
             </button>
           </p>
         )}
@@ -680,16 +722,22 @@ export default function LectureLive({ user, onOpenRecords }) {
           <span className="empty-icon">
             <Icon name="mic" size={31} />
           </span>
-          <h2>准备上课</h2>
+          <h2>{tr('准备上课', 'Ready for class')}</h2>
           <p>
-            点击“开始课程”后开始计时。上课时可以录音，老师的英文讲话会逐句识别并翻译成中文；也可以随时记录带时间点的笔记。下课时点击“结束课程”，选择保存到课程记录或丢弃。
+            {tr(
+              '点击“开始课程”后开始计时。上课时可以录音，老师的英文讲话会逐句识别并翻译成中文；也可以随时记录带时间点的笔记。下课时点击“结束课程”，选择保存到课程记录或丢弃。',
+              'Click “Start lecture” to start the timer. During class you can record: the lecturer’s English is recognized sentence by sentence and translated into Chinese, and you can take time-stamped notes. When class ends, click “End lecture” and save it to your records or discard it.',
+            )}
           </p>
           <p className="lecture-start-note">
-            识别和翻译都在本机完成，不上传、不保存录音。录音前请确认已获得授课老师和学校的允许。
+            {tr(
+              '识别和翻译都在本机完成，不上传、不保存录音。录音前请确认已获得授课老师和学校的允许。',
+              'Recognition and translation run on this computer; the recording is never uploaded or saved. Make sure the lecturer and the university allow recording first.',
+            )}
           </p>
           <button type="button" className="mail-primary" onClick={start}>
             <Icon name="mic" size={16} aria-hidden="true" />
-            开始课程
+            {tr('开始课程', 'Start lecture')}
           </button>
         </div>
       </section>
@@ -698,10 +746,10 @@ export default function LectureLive({ user, onOpenRecords }) {
 
   if (ending) {
     return (
-      <section className="lecture-page" aria-label="课程实时翻译">
+      <section className="lecture-page" aria-label={tr('课程实时翻译', 'Live lecture translation')}>
         {recState !== 'off' && (
           <p className="reply-status" role="status">
-            正在处理最后一句的字幕…
+            {tr('正在处理最后一句的字幕…', 'Finishing the last caption…')}
           </p>
         )}
         <SaveForm
@@ -730,10 +778,13 @@ export default function LectureLive({ user, onOpenRecords }) {
 
   const active = recState !== 'off'
   return (
-    <section className="lecture-page" aria-label="课程实时翻译">
+    <section className="lecture-page" aria-label={tr('课程实时翻译', 'Live lecture translation')}>
       {restored && (
         <p className="message success" role="status">
-          已恢复未结束的课程（{hkClock(draft.startedAt)} 开始），笔记都在。
+          {tr(
+            `已恢复未结束的课程（${hkClock(draft.startedAt)} 开始），笔记都在。`,
+            `Restored the unfinished lecture (started ${hkClock(draft.startedAt)}); your notes are all here.`,
+          )}
         </p>
       )}
       {streamError && (
@@ -746,10 +797,15 @@ export default function LectureLive({ user, onOpenRecords }) {
           <span className="lecture-live-dot" aria-hidden="true" />
           <div>
             <span>
-              上课中，{hkClock(draft.startedAt)} 开始，已录音{' '}
+              {tr(
+                `上课中，${hkClock(draft.startedAt)} 开始，已录音 `,
+                `In class since ${hkClock(draft.startedAt)}, recorded `,
+              )}
               {formatElapsed(recordedSeconds(draft.segments, now))}
             </span>
-            <strong aria-label="本节课已进行">{formatElapsed(elapsed)}</strong>
+            <strong aria-label={tr('本节课已进行', 'Lecture time so far')}>
+              {formatElapsed(elapsed)}
+            </strong>
           </div>
         </div>
         <div className="lecture-controls">
@@ -761,17 +817,25 @@ export default function LectureLive({ user, onOpenRecords }) {
               disabled={recState === 'stopping'}
             >
               <span className="lecture-rec-dot" aria-hidden="true" />
-              {recState === 'stopping' ? '正在暂停…' : '暂停录音'}
+              {recState === 'stopping'
+                ? tr('正在暂停…', 'Pausing…')
+                : tr('暂停录音', 'Pause recording')}
             </button>
           ) : (
             <button type="button" className="mail-secondary" onClick={startRecording}>
               <Icon name="mic" size={16} aria-hidden="true" />
-              {draft.segments.length ? '继续录音' : '开始录音'}
+              {draft.segments.length
+                ? tr('继续录音', 'Resume recording')
+                : tr('开始录音', 'Start recording')}
             </button>
           )}
           {confirmEnd ? (
-            <span className="schedule-confirm" role="group" aria-label="确认结束课程">
-              <span>确定要结束课程吗？</span>
+            <span
+              className="schedule-confirm"
+              role="group"
+              aria-label={tr('确认结束课程', 'Confirm ending the lecture')}
+            >
+              <span>{tr('确定要结束课程吗？', 'End the lecture?')}</span>
               <button
                 type="button"
                 className="danger-text"
@@ -780,10 +844,10 @@ export default function LectureLive({ user, onOpenRecords }) {
                   endCourse()
                 }}
               >
-                结束课程
+                {tr('结束课程', 'End lecture')}
               </button>
               <button type="button" onClick={() => setConfirmEnd(false)}>
-                继续上课
+                {tr('继续上课', 'Keep going')}
               </button>
             </span>
           ) : (
@@ -792,19 +856,26 @@ export default function LectureLive({ user, onOpenRecords }) {
               className="mail-primary lecture-end"
               onClick={() => setConfirmEnd(true)}
             >
-              结束课程
+              {tr('结束课程', 'End lecture')}
             </button>
           )}
         </div>
       </div>
       {askConsent && (
-        <div className="agenda-card lecture-consent" role="group" aria-label="录音前确认">
+        <div
+          className="agenda-card lecture-consent"
+          role="group"
+          aria-label={tr('录音前确认', 'Before recording')}
+        >
           <p>
-            录音会在本机实时转写老师的讲话，不会上传或保存录音。请确认你已获得授课老师和学校的允许，并遵守课程关于录音或转写的规定。
+            {tr(
+              '录音会在本机实时转写老师的讲话，不会上传或保存录音。请确认你已获得授课老师和学校的允许，并遵守课程关于录音或转写的规定。',
+              'The lecturer’s speech is transcribed live on this computer; the recording is never uploaded or saved. Confirm that the lecturer and the university allow it, and follow your course’s rules on recording and transcription.',
+            )}
           </p>
           <div className="schedule-form-actions">
             <button type="button" className="mail-secondary" onClick={() => setAskConsent(false)}>
-              取消
+              {tr('取消', 'Cancel')}
             </button>
             <button
               type="button"
@@ -818,16 +889,17 @@ export default function LectureLive({ user, onOpenRecords }) {
                 startRecording()
               }}
             >
-              我已确认，开始录音
+              {tr('我已确认，开始录音', 'Confirmed, start recording')}
             </button>
           </div>
         </div>
       )}
       <div className="lecture-columns">
         <Captions captions={draft.captions} interim={interim} recState={recState} level={level} />
-        <section className="agenda-card lecture-notes" aria-label="课堂笔记">
+        <section className="agenda-card lecture-notes" aria-label={tr('课堂笔记', 'Notes')}>
           <h2 className="schedule-form-title">
-            课堂笔记 <span>{draft.notes.length} 条</span>
+            {tr('课堂笔记', 'Notes')}{' '}
+            <span>{tr(`${draft.notes.length} 条`, draft.notes.length)}</span>
           </h2>
           {draft.notes.length ? (
             <ol className="lecture-note-list">
@@ -842,17 +914,25 @@ export default function LectureLive({ user, onOpenRecords }) {
               ))}
             </ol>
           ) : (
-            <p className="lecture-notes-empty">还没有笔记。老师讲到重点时，随手记一句。</p>
+            <p className="lecture-notes-empty">
+              {tr(
+                '还没有笔记。老师讲到重点时，随手记一句。',
+                'No notes yet. Jot one down when the lecturer makes a key point.',
+              )}
+            </p>
           )}
           <form className="lecture-note-input" onSubmit={addNote}>
             <label>
-              <span className="sr-only">新笔记</span>
+              <span className="sr-only">{tr('新笔记', 'New note')}</span>
               <textarea
                 ref={noteInput}
                 rows={2}
                 maxLength={2000}
                 value={noteText}
-                placeholder="写下笔记，按回车添加（Shift + 回车换行）"
+                placeholder={tr(
+                  '写下笔记，按回车添加（Shift + 回车换行）',
+                  'Write a note and press Enter to add it (Shift + Enter for a new line)',
+                )}
                 onChange={(event) => setNoteText(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -862,7 +942,7 @@ export default function LectureLive({ user, onOpenRecords }) {
               />
             </label>
             <button type="submit" className="mail-primary" disabled={!noteText.trim()}>
-              添加笔记（{formatElapsed(elapsed)}）
+              {tr(`添加笔记（${formatElapsed(elapsed)}）`, `Add note (${formatElapsed(elapsed)})`)}
             </button>
           </form>
         </section>

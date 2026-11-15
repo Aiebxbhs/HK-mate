@@ -3,6 +3,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { api } from './api/client'
+import { setLanguage } from './i18n'
 
 vi.mock('./api/client', () => ({
   api: {
@@ -17,6 +18,7 @@ vi.mock('./api/client', () => ({
     checkNotifications: vi.fn(),
     lectureRecords: vi.fn(),
     calendarCourses: vi.fn(),
+    setLanguage: vi.fn(),
   },
 }))
 const account = {
@@ -50,7 +52,10 @@ beforeEach(() => {
   history.replaceState(null, '', '/login')
   api.me.mockRejectedValue(Object.assign(new Error('请登录'), { status: 401 }))
 })
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  setLanguage('zh')
+})
 
 describe('account pages', () => {
   it('shows the five main places and switches pages inside a section', async () => {
@@ -281,6 +286,7 @@ describe('account pages', () => {
     expect(api.register).toHaveBeenCalledWith({
       username: account.username,
       password: 'example-password',
+      language: 'zh',
     })
     expect(screen.getByLabelText('账号')).toHaveValue(account.username)
     expect(screen.getByLabelText('密码', { exact: true })).toHaveValue('')
@@ -308,5 +314,44 @@ describe('account pages', () => {
         screen.getByRole('heading', { name: /(早上好|下午好|晚上好)，测试同学/ }),
       ).toBeVisible(),
     )
+  })
+})
+
+describe('language', () => {
+  it('switches the sign-in page to English and registers in English', async () => {
+    api.register.mockResolvedValue({ ...account, language: 'en' })
+    render(<App />)
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Switch to English' }))
+    expect(document.documentElement.lang).toBe('en')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    await user.type(screen.getByLabelText('Username'), account.username)
+    await user.type(screen.getByLabelText('Password'), 'example-password')
+    await user.type(screen.getByLabelText('Confirm password'), 'example-password')
+    await user.click(screen.getByRole('button', { name: 'Create account', hidden: false }))
+    await waitFor(() =>
+      expect(api.register).toHaveBeenCalledWith({
+        username: account.username,
+        password: 'example-password',
+        language: 'en',
+      }),
+    )
+    expect(await screen.findByText(/Account created/)).toBeInTheDocument()
+  })
+
+  it('opens in the account language and saves a change on the account page', async () => {
+    api.me.mockResolvedValue({ ...account, language: 'en' })
+    api.setLanguage.mockResolvedValue({ ...account, language: 'zh' })
+    render(<App />)
+    const user = userEvent.setup()
+    await screen.findByRole('heading', { name: /Good (morning|afternoon|evening), 测试同学/ })
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' })
+    expect(within(nav).getByRole('button', { name: 'Schedule' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Account menu' }))
+    await user.click(screen.getByRole('button', { name: 'My account' }))
+    await user.click(await screen.findByRole('button', { name: '中文' }))
+    expect(api.setLanguage).toHaveBeenCalledWith('zh')
+    expect(await screen.findByRole('heading', { name: '账号信息' })).toBeInTheDocument()
+    expect(document.documentElement.lang).toBe('zh-CN')
   })
 })

@@ -11,6 +11,7 @@ from app.schemas import (
     CsrfOutput,
     ErrorOutput,
     HealthOutput,
+    LanguageInput,
     LoginInput,
     PasswordChangeInput,
     RegisterInput,
@@ -33,6 +34,7 @@ def output(user: User) -> UserOutput:
         id=user.id,
         username=user.username,
         display_name=user.display_name,
+        language="en" if user.language == "en" else "zh",
         created_at=datetime.fromtimestamp(user.created_at, UTC),
     )
 
@@ -86,6 +88,17 @@ def login(
 @router.get("/users/me", response_model=UserOutput)
 def me(request: Request, db: Session = Depends(database)) -> UserOutput:
     return output(services.current_user(db, request.cookies.get(SESSION_COOKIE)))
+
+
+@router.put("/users/me/language", response_model=UserOutput)
+def set_language(
+    data: LanguageInput, request: Request, db: Session = Depends(database)
+) -> UserOutput:
+    """Interface language for this account; summaries written later follow it too."""
+    user = services.current_user(db, request.cookies.get(SESSION_COOKIE))
+    user.language = data.language
+    db.commit()
+    return output(user)
 
 
 @router.post("/auth/password", status_code=204)

@@ -20,6 +20,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.core.config import ROOT
 from app.core.security import SESSION_COOKIE
+from app.i18n import request_language, tr
 from app.mail_summary import MODEL, NUM_CTX, OLLAMA_URL
 from app.services import AuthError, current_user
 
@@ -324,7 +325,8 @@ router = APIRouter(prefix="/api/v1/lecture")
 
 
 async def send_error(websocket: WebSocket, code: str) -> None:
-    await websocket.send_json({"type": "error", "code": code, "message": ERRORS[code]})
+    message = tr(ERRORS[code], request_language(websocket))
+    await websocket.send_json({"type": "error", "code": code, "message": message})
     await websocket.close(code=1008)
 
 

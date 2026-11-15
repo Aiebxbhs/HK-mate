@@ -53,6 +53,7 @@ def register_user(db: Session, data: RegisterInput) -> User:
         username=str(data.username),
         display_name=data.username,
         password_hash=password_hasher.hash(data.password),
+        language=data.language,
         created_at=now,
         updated_at=now,
     )

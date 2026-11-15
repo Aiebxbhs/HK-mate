@@ -261,6 +261,7 @@ Agent 只用云端模型。原因：多步任务（查课程 → 起草邮件 �
 2. 更新 `verified` 日期；如官方信息有冲突或未写清，在条目中如实写明并指出查询渠道。
 3. 新来源域名需加入 `backend/tests/test_agent_api.py` 的 `OFFICIAL_DOMAINS` 白名单，并确认是官方网站。
 4. 建议每学期开学前（或每 6 个月）复核一次全部条目，尤其是费用、期限和申请方式。
+5. 英文版（2026-11-15）：每篇在 `knowledge/hk/en/`（使用说明在 `knowledge/en/app_guide.md`）有同名英文译文，`topic`、`category`、`verified`、来源链接和段落数须与中文原文一致（`test_english_guides_mirror_the_verified_chinese_ones` 检查）。修改中文条目时同步修改英文版；英文账号的 HKU 指南页面和 AI 检索读取英文版，缺译文时回退中文。
 
 ## 15. 配置文件分类（2026-11-14）
 

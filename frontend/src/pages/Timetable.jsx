@@ -5,12 +5,17 @@ import { hkDay } from '../components/Agenda'
 import { SCHEDULE_CHANGED } from '../components/schedule-draft'
 import { eventTime, shiftDate } from '../components/use-calendar-events'
 import Skeleton from '../components/Skeleton'
+import { tr } from '../i18n'
 
-// "我的课表": the imported HKU courses only, laid out like the HKU portal timetable:
+// tr('我的课表', 'My timetable'): the imported HKU courses only, laid out like the HKU portal timetable:
 // one long calendar, a row per week (Monday to Sunday), from the first class to the last exam.
 const CHUNK_DAYS = 98 // the events API returns at most 100 days per request
 const MAX_WEEKS = 60
-const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
+const weekdays = () =>
+  tr(
+    ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  )
 const COLOURS = 6
 const COURSE_CODE = /\b([A-Z]{4}\d{4})(?:[-_]([0-9A-Z]+))?/i
 
@@ -29,7 +34,9 @@ function isExam(title) {
 }
 
 function shortDate(iso) {
-  return `${Number(iso.slice(5, 7))}月${Number(iso.slice(8, 10))}日`
+  const month = Number(iso.slice(5, 7))
+  const day = Number(iso.slice(8, 10))
+  return tr(`${month}月${day}日`, `${day}/${month}`)
 }
 
 function CourseCard({ event, colour, selected, onSelect }) {
@@ -45,7 +52,7 @@ function CourseCard({ event, colour, selected, onSelect }) {
     >
       <strong>
         {label}
-        {exam && <span className="timetable-exam-tag">考试</span>}
+        {exam && <span className="timetable-exam-tag">{tr('考试', 'Exam')}</span>}
       </strong>
       <span>
         {eventTime(event.starts_at)}–{eventTime(event.ends_at)}
@@ -57,17 +64,17 @@ function CourseCard({ event, colour, selected, onSelect }) {
 
 function EventDetail({ event, course }) {
   return (
-    <article className="timetable-detail" aria-label="课程详情">
+    <article className="timetable-detail" aria-label={tr('课程详情', 'Class details')}>
       <h3>{event.title}</h3>
       {course?.course_name && <p className="timetable-detail-name">{course.course_name}</p>}
       <dl>
-        <dt>时间</dt>
+        <dt>{tr('时间', 'Time')}</dt>
         <dd>
           {shortDate(hkDay(event.starts_at))} {eventTime(event.starts_at)}–
           {eventTime(event.ends_at)}
         </dd>
-        <dt>地点</dt>
-        <dd>{event.location || '未注明'}</dd>
+        <dt>{tr('地点', 'Location')}</dt>
+        <dd>{event.location || tr('未注明', 'Not given')}</dd>
       </dl>
     </article>
   )
@@ -128,7 +135,10 @@ export default function Timetable({ today = hkDay(new Date()) }) {
         setEvents(items)
         setError('')
       } catch (cause) {
-        if (active) setError(cause.message || '课表暂时无法加载。')
+        if (active)
+          setError(
+            cause.message || tr('课表暂时无法加载。', "The timetable can't be loaded right now."),
+          )
       }
     }
     void load()
@@ -155,9 +165,16 @@ export default function Timetable({ today = hkDay(new Date()) }) {
     setImporting(false)
     setSelectedId('')
     setNotice(
-      `已导入 ${result.imported} 节课程和考试${
-        result.skipped_all_day ? `，跳过 ${result.skipped_all_day} 个全天事件（如大学假期）` : ''
-      }。`,
+      tr(
+        `已导入 ${result.imported} 节课程和考试${
+          result.skipped_all_day ? `，跳过 ${result.skipped_all_day} 个全天事件（如大学假期）` : ''
+        }。`,
+        `Imported ${result.imported} classes and exams${
+          result.skipped_all_day
+            ? `; skipped ${result.skipped_all_day} all-day events (such as university holidays)`
+            : ''
+        }.`,
+      ),
     )
     scrolled.current = false
     setVersion((value) => value + 1)
@@ -183,7 +200,8 @@ export default function Timetable({ today = hkDay(new Date()) }) {
         {error}
       </p>
     )
-  if (!courses || !events) return <Skeleton label="正在读取课表…" rows={5} />
+  if (!courses || !events)
+    return <Skeleton label={tr('正在读取课表…', 'Loading timetable…')} rows={5} />
   if (!courses.length) return <TimetableImport firstTime onImported={imported} />
 
   const weeks = semesterWeeks(courses)
@@ -192,12 +210,15 @@ export default function Timetable({ today = hkDay(new Date()) }) {
   const selected = events.find((event) => event.id === selectedId)
 
   return (
-    <section className="timetable" aria-label="我的课表">
+    <section className="timetable" aria-label={tr('我的课表', 'My timetable')}>
       <div className="timetable-toolbar">
         <p className="timetable-range">
           {weeks.length
-            ? `${shortDate(weeks[0][0])} – ${shortDate(weeks[weeks.length - 1][6])}，共 ${weeks.length} 周（香港时间）`
-            : '没有可显示的上课时间。'}
+            ? tr(
+                `${shortDate(weeks[0][0])} – ${shortDate(weeks[weeks.length - 1][6])}，共 ${weeks.length} 周（香港时间）`,
+                `${shortDate(weeks[0][0])} – ${shortDate(weeks[weeks.length - 1][6])}, ${weeks.length} weeks (Hong Kong time)`,
+              )
+            : tr('没有可显示的上课时间。', 'No class times to show.')}
         </p>
         <div className="timetable-toolbar-side">
           {inSemester && (
@@ -208,7 +229,7 @@ export default function Timetable({ today = hkDay(new Date()) }) {
                 thisWeek.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
               }
             >
-              回到本周
+              {tr('回到本周', 'This week')}
             </button>
           )}
           <button
@@ -217,7 +238,7 @@ export default function Timetable({ today = hkDay(new Date()) }) {
             aria-expanded={importing}
             onClick={() => setImporting((value) => !value)}
           >
-            {importing ? '收起' : '重新导入'}
+            {importing ? tr('收起', 'Close') : tr('重新导入', 'Re-import')}
           </button>
         </div>
       </div>
@@ -228,11 +249,11 @@ export default function Timetable({ today = hkDay(new Date()) }) {
       )}
       {importing && <TimetableImport onImported={imported} />}
 
-      <div className="timetable-grid" role="table" aria-label="学期课表">
+      <div className="timetable-grid" role="table" aria-label={tr('学期课表', 'Term timetable')}>
         <div className="timetable-row timetable-head" role="row">
-          {WEEKDAYS.map((name) => (
+          {weekdays().map((name) => (
             <span key={name} role="columnheader">
-              周{name}
+              {name}
             </span>
           ))}
         </div>
@@ -255,8 +276,10 @@ export default function Timetable({ today = hkDay(new Date()) }) {
                   >
                     <span className="timetable-date">
                       {shortDate(day)}
-                      <span className="timetable-weekday"> 周{WEEKDAYS[index]}</span>
-                      {day === today && <span className="timetable-today">今天</span>}
+                      <span className="timetable-weekday"> {weekdays()[index]}</span>
+                      {day === today && (
+                        <span className="timetable-today">{tr('今天', 'Today')}</span>
+                      )}
                     </span>
                     {dayEvents.map((event) => (
                       <CourseCard

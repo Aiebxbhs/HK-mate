@@ -5,6 +5,7 @@ import CampusMap from '../components/CampusMap'
 import GuideSection, { parseSection, wideSections } from '../components/GuideSection'
 import LibraryFloors from '../components/LibraryFloors'
 import Skeleton from '../components/Skeleton'
+import { tr } from '../i18n'
 
 /** One category of the HKU guide (postgraduates), from verified official sources only. */
 export default function HkuGuide({ category }) {
@@ -35,7 +36,13 @@ export default function HkuGuide({ category }) {
       </p>
     )
   if (!guide || (visual && !places))
-    return <Skeleton label="正在读取 HKU 指南…" rows={6} variant="text" />
+    return (
+      <Skeleton
+        label={tr('正在读取 HKU 指南…', 'Loading the HKU guide…')}
+        rows={6}
+        variant="text"
+      />
+    )
   const section = guide.categories.find((item) => item.id === category)
   const placeSources = places && (
     <KnowledgeCard
@@ -43,8 +50,13 @@ export default function HkuGuide({ category }) {
     />
   )
   return (
-    <section className="hku-guide" aria-label={section?.title || 'HKU 指南'}>
-      <p className="hku-guide-audience">以下内容针对{guide.audience}，整理自港大官方网站。</p>
+    <section className="hku-guide" aria-label={section?.title || tr('HKU 指南', 'HKU guide')}>
+      <p className="hku-guide-audience">
+        {tr(
+          `以下内容针对${guide.audience}，整理自港大官方网站。`,
+          `For ${guide.audience.toLowerCase()}, compiled from official HKU websites.`,
+        )}
+      </p>
       {places && <LibraryFloors library={places.library} />}
       {category === 'transport' && <CampusMap />}
       {placeSources}
@@ -83,7 +95,12 @@ export default function HkuGuide({ category }) {
         })
       ) : (
         <div className="agenda-card agenda-empty">
-          <p>这一部分正在整理中，内容只会采用港大官方资料。</p>
+          <p>
+            {tr(
+              '这一部分正在整理中，内容只会采用港大官方资料。',
+              'This part is being prepared, using official HKU sources only.',
+            )}
+          </p>
         </div>
       )}
     </section>

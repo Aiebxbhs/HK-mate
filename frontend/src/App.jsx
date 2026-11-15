@@ -3,9 +3,28 @@ import { api } from './api/client'
 import Icon from './components/Icon'
 import Brand, { Wordmark } from './components/Brand'
 import Home from './pages/Home'
+import { setLanguage, useLanguage } from './i18n'
+
+/** 中文 / English switch; before sign-in it is remembered in this browser only. */
+export function LanguageSwitch({ onChange, className = 'language-switch' }) {
+  const { language, t } = useLanguage()
+  const next = language === 'en' ? 'zh' : 'en'
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={() => (onChange ? onChange(next) : setLanguage(next))}
+      aria-label={t('Switch to English', '切换到中文')}
+      lang={next === 'en' ? 'en' : 'zh-CN'}
+    >
+      {next === 'en' ? 'English' : '中文'}
+    </button>
+  )
+}
 
 function AuthForm({ mode, onMode, onLogin }) {
   const register = mode === 'register'
+  const { language, t } = useLanguage()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -28,15 +47,20 @@ function AuthForm({ mode, onMode, onLogin }) {
     setError('')
     setNotice('')
     if (register && password !== confirmation) {
-      setError('两次输入的密码不一致，请检查。')
+      setError(t('两次输入的密码不一致，请检查。', "The passwords don't match. Please check."))
       return
     }
     setBusy(true)
     try {
       if (register) {
-        await api.register({ username: username.trim(), password })
+        await api.register({ username: username.trim(), password, language })
         changeMode('login')
-        setNotice('账号已创建，请使用刚才的账号和密码登录。')
+        setNotice(
+          t(
+            '账号已创建，请使用刚才的账号和密码登录。',
+            'Account created. Sign in with the username and password you just set.',
+          ),
+        )
       } else {
         onLogin(await api.login({ username: username.trim(), password }))
       }
@@ -59,17 +83,19 @@ function AuthForm({ mode, onMode, onLogin }) {
           onClick={() => changeMode(register ? 'login' : 'register')}
           disabled={busy}
         >
-          {register ? '登录' : '注册账号'}
+          {register ? t('登录', 'Sign in') : t('注册账号', 'Create account')}
         </button>
       </div>
-      <h2 className="auth-title">{register ? '注册' : '登录'}</h2>
+      <h2 className="auth-title">
+        {register ? t('注册', 'Create account') : t('登录', 'Sign in')}
+      </h2>
       <form onSubmit={submit}>
         <fieldset disabled={busy}>
           <label htmlFor="username" className="auth-field">
             <span className="auth-field-icon" aria-hidden="true">
               <Icon name="user" size={17} />
             </span>
-            <span className="sr-only">账号</span>
+            <span className="sr-only">{t('账号', 'Username')}</span>
             <input
               id="username"
               name="username"
@@ -80,7 +106,7 @@ function AuthForm({ mode, onMode, onLogin }) {
               pattern={register ? '[a-zA-Z0-9_]+' : undefined}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="账号"
+              placeholder={t('账号', 'Username')}
               aria-describedby={register ? 'username-help' : undefined}
               autoCapitalize="none"
               spellCheck={false}
@@ -89,14 +115,17 @@ function AuthForm({ mode, onMode, onLogin }) {
           </label>
           {register && (
             <p id="username-help" className="field-help">
-              3–32 位字母、数字或下划线，不区分大小写。
+              {t(
+                '3–32 位字母、数字或下划线，不区分大小写。',
+                '3–32 letters, digits or underscores; not case-sensitive.',
+              )}
             </p>
           )}
           <label htmlFor="password" className="auth-field">
             <span className="auth-field-icon" aria-hidden="true">
               <Icon name="lock" size={17} />
             </span>
-            <span className="sr-only">密码</span>
+            <span className="sr-only">{t('密码', 'Password')}</span>
             <input
               id="password"
               name="password"
@@ -106,7 +135,7 @@ function AuthForm({ mode, onMode, onLogin }) {
               maxLength={128}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="密码"
+              placeholder={t('密码', 'Password')}
               aria-describedby={register ? 'password-help' : undefined}
               required
             />
@@ -114,15 +143,18 @@ function AuthForm({ mode, onMode, onLogin }) {
               className="auth-field-action"
               type="button"
               onClick={() => setVisible((v) => !v)}
-              aria-label={visible ? '隐藏密码' : '显示密码'}
+              aria-label={visible ? t('隐藏密码', 'Hide password') : t('显示密码', 'Show password')}
               aria-pressed={visible}
             >
-              {visible ? '隐藏' : '显示'}
+              {visible ? t('隐藏', 'Hide') : t('显示', 'Show')}
             </button>
           </label>
           {register && (
             <p id="password-help" className="field-help">
-              使用 12–128 个字符，建议结合字母、数字或符号。
+              {t(
+                '使用 12–128 个字符，建议结合字母、数字或符号。',
+                'Use 12–128 characters; mix letters, digits or symbols.',
+              )}
             </p>
           )}
           {register && (
@@ -130,7 +162,7 @@ function AuthForm({ mode, onMode, onLogin }) {
               <span className="auth-field-icon" aria-hidden="true">
                 <Icon name="lock" size={17} />
               </span>
-              <span className="sr-only">确认密码</span>
+              <span className="sr-only">{t('确认密码', 'Confirm password')}</span>
               <input
                 id="confirmation"
                 name="confirmation"
@@ -140,7 +172,7 @@ function AuthForm({ mode, onMode, onLogin }) {
                 onChange={(e) => setConfirmation(e.target.value)}
                 minLength={12}
                 maxLength={128}
-                placeholder="再输入一次密码"
+                placeholder={t('再输入一次密码', 'Enter the password again')}
                 required
               />
             </label>
@@ -157,12 +189,18 @@ function AuthForm({ mode, onMode, onLogin }) {
             </div>
           )}
           <div className="auth-actions">
-            <p>留一点时间，给真正重要的事。</p>
+            <p>{t('留一点时间，给真正重要的事。', 'Make time for what really matters.')}</p>
             <button
               className="auth-submit"
               type="submit"
               aria-label={
-                busy ? `正在${register ? '创建' : '登录'}` : register ? '创建账号' : '登录我的空间'
+                busy
+                  ? register
+                    ? t('正在创建', 'Creating')
+                    : t('正在登录', 'Signing in')
+                  : register
+                    ? t('创建账号', 'Create account')
+                    : t('登录我的空间', 'Sign in')
               }
             >
               {busy ? <span className="spinner" /> : <Icon name="arrow" size={20} />}
@@ -175,6 +213,7 @@ function AuthForm({ mode, onMode, onLogin }) {
 }
 
 export default function App() {
+  const { t } = useLanguage()
   const [mode, setMode] = useState(location.pathname === '/register' ? 'register' : 'login')
   const [user, setUser] = useState(null)
   const [checking, setChecking] = useState(true)
@@ -182,7 +221,9 @@ export default function App() {
 
   async function checkSession() {
     try {
-      setUser(await api.me())
+      const value = await api.me()
+      setLanguage(value.language)
+      setUser(value)
       setConnectionError('')
     } catch (cause) {
       if (cause.status === 401) {
@@ -199,7 +240,9 @@ export default function App() {
     api
       .me()
       .then((value) => {
-        if (active) setUser(value)
+        if (!active) return
+        setLanguage(value.language)
+        setUser(value)
       })
       .catch((cause) => {
         if (active && cause.status !== 401) setConnectionError(cause.message)
@@ -232,13 +275,14 @@ export default function App() {
       <div className="loading-screen">
         <Brand />
         <span className="spinner" />
-        <p>正在打开你的空间…</p>
+        <p>{t('正在打开你的空间…', 'Opening your space…')}</p>
       </div>
     )
   if (user)
     return (
       <Home
         user={user}
+        onUser={setUser}
         sessionError={connectionError}
         onRetry={checkSession}
         onLogout={() => {
@@ -250,16 +294,18 @@ export default function App() {
   return (
     <main className="auth-shell">
       <div className="auth-right">
+        <LanguageSwitch className="language-switch auth-language" />
         {connectionError && (
           <div className="connection-banner" role="alert">
             {connectionError}
-            <button onClick={checkSession}>重新连接</button>
+            <button onClick={checkSession}>{t('重新连接', 'Reconnect')}</button>
           </div>
         )}
         <AuthForm
           mode={mode}
           onMode={navigate}
           onLogin={(value) => {
+            setLanguage(value.language)
             setUser(value)
             setConnectionError('')
             history.replaceState(null, '', '/')

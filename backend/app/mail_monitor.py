@@ -386,8 +386,10 @@ class MailMonitor:
                     return False
             with self.sessions() as db:
                 mail = self.mail.message(db, owner, cid, mid)
+                # Summaries are written in the account's interface language.
+                language = db.scalar(select(User.language).where(User.id == owner)) or "zh"
                 db.rollback()
-            result = self.summarizer.summarize(mail)
+            result = self.summarizer.summarize(mail, language)
             self._finish(notification_id, result.summary.model_dump(mode="json"), "")
         except Exception as exc:
             code = (

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app import mail_categories, services
 from app.api import database
 from app.core.security import SESSION_COOKIE
+from app.i18n import request_language
 from app.mail_reply import (
     ComposeRequest,
     DraftError,
@@ -139,7 +140,7 @@ def summarize_message(
         mail = request.app.state.mail.message(db, user_id, connection_id, message_id)
         db.rollback()  # Release the read transaction before potentially long local inference.
         try:
-            result = request.app.state.summarizer.summarize(mail)
+            result = request.app.state.summarizer.summarize(mail, request_language(request))
         except SummaryError as exc:
             code = str(exc)
             known = {
@@ -215,6 +216,7 @@ def draft_reply(
                     tone=body.tone,
                     language=body.language,
                     signature=body.signature.strip(),
+                    interface=request_language(request),
                 ),
             )
         except DraftError as exc:
@@ -279,6 +281,7 @@ def draft_new_mail(
                 tone=body.tone,
                 language=body.language,
                 signature=body.signature.strip(),
+                interface=request_language(request),
             )
         )
     except DraftError as exc:

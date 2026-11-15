@@ -3,6 +3,8 @@
 Content comes only from backend/app/agent/knowledge/hk/*.md with `topic: hku`; each file is
 checked against official HKU pages and lists its sources and check date. Categories without a
 verified file yet are returned empty, so the page says so instead of showing placeholders.
+English pages read the translations in knowledge/hk/en/ (same file names); a file without a
+translation is shown in Chinese rather than left out.
 """
 
 import json
@@ -14,9 +16,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import services
-from app.agent.tools import KNOWLEDGE_DIR, frontmatter
+from app.agent.tools import KNOWLEDGE_DIR, english_version, frontmatter
 from app.api import database
 from app.core.security import SESSION_COOKIE
+from app.i18n import Language, request_language, tr
 from app.schemas import ErrorOutput
 
 router = APIRouter(prefix="/api/v1/guides", responses={401: {"model": ErrorOutput}})
@@ -55,7 +58,7 @@ class GuideCategory(BaseModel):
 
 
 class Guide(BaseModel):
-    audience: str = "研究生"
+    audience: str
     categories: list[GuideCategory]
 
 
@@ -98,14 +101,15 @@ class HkuPlaces(BaseModel):
 
 
 @cache
-def load_hku_places() -> HkuPlaces:
-    path = KNOWLEDGE_DIR / "hku-places.json"
+def load_hku_places(language: Language = "zh") -> HkuPlaces:
+    path = english_version(KNOWLEDGE_DIR / "hku-places.json", language)
     return HkuPlaces.model_validate(json.loads(path.read_text(encoding="utf-8")))
 
 
-def load_hku_guide() -> Guide:
+def load_hku_guide(language: Language = "zh") -> Guide:
     documents: dict[str, list[GuideDocument]] = {key: [] for key, _ in CATEGORIES}
-    for path in sorted(KNOWLEDGE_DIR.glob("*.md")):
+    for original in sorted(KNOWLEDGE_DIR.glob("*.md")):
+        path = english_version(original, language)
         fields, sources, body = frontmatter(path.read_text(encoding="utf-8"))
         if fields.get("topic") != "hku" or fields.get("category") not in documents:
             continue
@@ -125,20 +129,21 @@ def load_hku_guide() -> Guide:
             )
         )
     return Guide(
+        audience="Postgraduates" if language == "en" else "研究生",
         categories=[
-            GuideCategory(id=key, title=title, documents=documents[key])
+            GuideCategory(id=key, title=tr(title, language), documents=documents[key])
             for key, title in CATEGORIES
-        ]
+        ],
     )
 
 
 @router.get("/hku", response_model=Guide)
 def hku_guide(request: Request, db: Session = Depends(database)) -> Guide:
     services.current_user(db, request.cookies.get(SESSION_COOKIE))
-    return load_hku_guide()
+    return load_hku_guide(request_language(request))
 
 
 @router.get("/hku/places", response_model=HkuPlaces)
 def hku_places(request: Request, db: Session = Depends(database)) -> HkuPlaces:
     services.current_user(db, request.cookies.get(SESSION_COOKIE))
-    return load_hku_places()
+    return load_hku_places(request_language(request))

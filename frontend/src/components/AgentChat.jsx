@@ -4,15 +4,20 @@ import AgentCard, { ChoicesCard } from './AgentCards'
 import Icon from './Icon'
 import { readSignature } from './ReplyDraftPanel'
 import Skeleton from './Skeleton'
+import { locale, tr } from '../i18n'
 
 // Shown below the reply text: sources at the end of the answer, then quick replies.
 const AFTER_TEXT = ['knowledge', 'choices']
-const SUGGESTIONS = [
-  '明天有什么课？',
-  '帮我写封请假邮件',
-  '帮我找找西营盘美食',
-  '怎么办香港身份证？',
-]
+const suggestions = () =>
+  tr(
+    ['明天有什么课？', '帮我写封请假邮件', '帮我找找西营盘美食', '怎么办香港身份证？'],
+    [
+      'What classes do I have tomorrow?',
+      'Help me write a leave email',
+      'Find good food in Sai Ying Pun',
+      'How do I get a Hong Kong ID card?',
+    ],
+  )
 
 /** Model replies may use light Markdown; show it as plain text without the markers. */
 export function plainText(text) {
@@ -22,14 +27,17 @@ export function plainText(text) {
     .replace(/^\s*[-*]\s+/gm, '• ')
 }
 
-const dayTime = new Intl.DateTimeFormat('zh-CN', {
-  timeZone: 'Asia/Hong_Kong',
-  month: 'numeric',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-  hourCycle: 'h23',
-})
+const dayTime = {
+  format: (value) =>
+    new Intl.DateTimeFormat(locale(), {
+      timeZone: 'Asia/Hong_Kong',
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).format(value),
+}
 
 function HistoryPanel({ currentId, onOpen, onDeleted }) {
   const [items, setItems] = useState(null)
@@ -59,37 +67,46 @@ function HistoryPanel({ currentId, onOpen, onDeleted }) {
   }
 
   return (
-    <section className="agent-panel" aria-label="历史对话">
-      <p className="agent-panel-note">保存在本机（加密），只保留最近 20 个对话。</p>
+    <section className="agent-panel" aria-label={tr('历史对话', 'Chat history')}>
+      <p className="agent-panel-note">
+        {tr(
+          '保存在本机（加密），只保留最近 20 个对话。',
+          'Saved on this computer (encrypted); only the latest 20 chats are kept.',
+        )}
+      </p>
       {error && (
         <p className="message error" role="alert">
           {error}
         </p>
       )}
       {!items ? (
-        <Skeleton label="正在读取…" rows={3} />
+        <Skeleton label={tr('正在读取…', 'Loading…')} rows={3} />
       ) : items.length ? (
         <ul>
           {items.map((item) => (
             <li key={item.id} className={item.id === currentId ? 'is-current' : ''}>
               <button type="button" className="agent-panel-main" onClick={() => onOpen(item.id)}>
-                <span>{item.title || '（无标题）'}</span>
+                <span>{item.title || tr('（无标题）', '(Untitled)')}</span>
                 <small>{dayTime.format(new Date(item.updated_at))}</small>
               </button>
               {confirmId === item.id ? (
-                <span className="agent-panel-confirm" role="group" aria-label="确认删除对话">
+                <span
+                  className="agent-panel-confirm"
+                  role="group"
+                  aria-label={tr('确认删除对话', 'Confirm deleting the chat')}
+                >
                   <button type="button" className="danger-text" onClick={() => remove(item.id)}>
-                    删除
+                    {tr('删除', 'Delete')}
                   </button>
                   <button type="button" onClick={() => setConfirmId('')}>
-                    取消
+                    {tr('取消', 'Cancel')}
                   </button>
                 </span>
               ) : (
                 <button
                   type="button"
                   className="agent-panel-delete"
-                  aria-label={`删除对话 ${item.title}`}
+                  aria-label={tr(`删除对话 ${item.title}`, `Delete chat ${item.title}`)}
                   onClick={() => setConfirmId(item.id)}
                 >
                   ×
@@ -99,7 +116,7 @@ function HistoryPanel({ currentId, onOpen, onDeleted }) {
           ))}
         </ul>
       ) : (
-        <p className="agent-panel-empty">还没有保存的对话。</p>
+        <p className="agent-panel-empty">{tr('还没有保存的对话。', 'No saved chats yet.')}</p>
       )}
     </section>
   )
@@ -131,9 +148,12 @@ function MemoryPanel() {
   }
 
   return (
-    <section className="agent-panel" aria-label="AI 的记忆">
+    <section className="agent-panel" aria-label={tr('AI 的记忆', "The AI's memory")}>
       <p className="agent-panel-note">
-        AI 从对话中记住的关于你的信息，会随每次对话发送给 AI 服务，用来让回答更合你心意。
+        {tr(
+          'AI 从对话中记住的关于你的信息，会随每次对话发送给 AI 服务，用来让回答更合你心意。',
+          'What the AI remembered about you from chats. It is sent to the AI service with each chat so answers fit you better.',
+        )}
       </p>
       {error && (
         <p className="message error" role="alert">
@@ -141,7 +161,7 @@ function MemoryPanel() {
         </p>
       )}
       {!items ? (
-        <Skeleton label="正在读取…" rows={3} />
+        <Skeleton label={tr('正在读取…', 'Loading…')} rows={3} />
       ) : items.length ? (
         <>
           <ul>
@@ -151,7 +171,7 @@ function MemoryPanel() {
                 <button
                   type="button"
                   className="agent-panel-delete"
-                  aria-label={`忘掉 ${item.fact}`}
+                  aria-label={tr(`忘掉 ${item.fact}`, `Forget ${item.fact}`)}
                   onClick={() =>
                     run(
                       () => api.deleteAgentMemory(item.id),
@@ -165,8 +185,12 @@ function MemoryPanel() {
             ))}
           </ul>
           {confirmClear ? (
-            <span className="agent-panel-confirm" role="group" aria-label="确认清空记忆">
-              清空后 AI 会忘掉以上全部内容。
+            <span
+              className="agent-panel-confirm"
+              role="group"
+              aria-label={tr('确认清空记忆', 'Confirm clearing memory')}
+            >
+              {tr('清空后 AI 会忘掉以上全部内容。', 'The AI will forget everything above.')}
               <button
                 type="button"
                 className="danger-text"
@@ -180,21 +204,24 @@ function MemoryPanel() {
                   )
                 }
               >
-                清空
+                {tr('清空', 'Clear')}
               </button>
               <button type="button" onClick={() => setConfirmClear(false)}>
-                取消
+                {tr('取消', 'Cancel')}
               </button>
             </span>
           ) : (
             <button type="button" className="text-button" onClick={() => setConfirmClear(true)}>
-              全部清空
+              {tr('全部清空', 'Clear all')}
             </button>
           )}
         </>
       ) : (
         <p className="agent-panel-empty">
-          还没有记住任何内容。聊天时说说你的偏好（比如“我不吃辣”），AI 会记下来。
+          {tr(
+            '还没有记住任何内容。聊天时说说你的偏好（比如“我不吃辣”），AI 会记下来。',
+            'Nothing remembered yet. Mention your preferences in a chat (for example “I don’t eat spicy food”) and the AI will note them.',
+          )}
         </p>
       )}
     </section>
@@ -204,7 +231,7 @@ function MemoryPanel() {
 function Steps({ steps }) {
   if (!steps.length) return null
   return (
-    <ul className="agent-steps" aria-label="AI 助手的操作">
+    <ul className="agent-steps" aria-label={tr('AI 助手的操作', "The assistant's steps")}>
       {steps.map((step, index) => (
         <li key={`${step.tool}-${index}`} className={`is-${step.state}`}>
           {step.state === 'running' ? (
@@ -213,7 +240,7 @@ function Steps({ steps }) {
             <span aria-hidden="true">{step.state === 'done' ? '✓' : '!'}</span>
           )}
           {step.state === 'running' ? `${step.label}…` : step.label.replace(/^正在/, '已')}
-          {step.state === 'failed' && '（未成功）'}
+          {step.state === 'failed' && tr('（未成功）', ' (failed)')}
         </li>
       ))}
     </ul>
@@ -311,7 +338,14 @@ export default function AgentChat({ onNavigate }) {
       updateLast((message) => ({
         ...message,
         pending: false,
-        error: message.error || (message.content ? '' : 'AI 助手没有给出回答，请重试。'),
+        error:
+          message.error ||
+          (message.content
+            ? ''
+            : tr(
+                'AI 助手没有给出回答，请重试。',
+                'The AI assistant gave no answer. Please retry.',
+              )),
       }))
       setBusy(false)
     }
@@ -340,48 +374,54 @@ export default function AgentChat({ onNavigate }) {
 
   const available = status?.available
   return (
-    <section id="inspiration-chat" className="agent-chat" aria-label="AI 助手">
+    <section
+      id="inspiration-chat"
+      className="agent-chat"
+      aria-label={tr('AI 助手', 'AI assistant')}
+    >
       {statusError ? (
         <p className="message error" role="alert">
           {statusError}
         </p>
       ) : !status ? (
         <p className="mail-loading" role="status">
-          正在连接 AI 助手…
+          {tr('正在连接 AI 助手…', 'Connecting to the AI assistant…')}
         </p>
       ) : !available ? (
         <div className="ai-chat-empty">
           <span className="ai-chat-symbol">
             <Icon name="spark" size={27} />
           </span>
-          <h3>AI 助手暂不可用</h3>
+          <h3>{tr('AI 助手暂不可用', 'The AI assistant is unavailable')}</h3>
           <p>{status.message}</p>
         </div>
       ) : (
         <>
           <div className="agent-toolbar">
-            <span className="agent-toolbar-title">{conversation?.title || '新对话'}</span>
+            <span className="agent-toolbar-title">
+              {conversation?.title || tr('新对话', 'New chat')}
+            </span>
             <button
               type="button"
               aria-pressed={panel === 'history'}
               disabled={busy}
               onClick={() => setPanel(panel === 'history' ? '' : 'history')}
             >
-              历史
+              {tr('历史', 'History')}
             </button>
             <button
               type="button"
               aria-pressed={panel === 'memory'}
               onClick={() => setPanel(panel === 'memory' ? '' : 'memory')}
             >
-              记忆
+              {tr('记忆', 'Memory')}
             </button>
             <button
               type="button"
               disabled={busy || (!conversation && !messages.length)}
               onClick={startNew}
             >
-              新对话
+              {tr('新对话', 'New chat')}
             </button>
           </div>
           {loadError && (
@@ -401,7 +441,7 @@ export default function AgentChat({ onNavigate }) {
             {messages.length === 0 ? (
               <div className="agent-welcome">
                 <div className="agent-suggestions">
-                  {SUGGESTIONS.map((text) => (
+                  {suggestions().map((text) => (
                     <button key={text} type="button" onClick={() => send(text)}>
                       {text}
                     </button>
@@ -409,7 +449,7 @@ export default function AgentChat({ onNavigate }) {
                 </div>
               </div>
             ) : (
-              <ol aria-label="对话" aria-live="polite">
+              <ol aria-label={tr('对话', 'Chat')} aria-live="polite">
                 {messages.map((message, index) => (
                   <li key={index} className={`agent-message is-${message.role}`}>
                     {message.role === 'assistant' && <Steps steps={message.steps} />}
@@ -437,10 +477,14 @@ export default function AgentChat({ onNavigate }) {
                     {message.pending && !message.steps.some((s) => s.state === 'running') && (
                       <p className="agent-thinking" role="status">
                         <span className="lecture-summary-spinner" aria-hidden="true" />
-                        正在思考…
+                        {tr('正在思考…', 'Thinking…')}
                       </p>
                     )}
-                    {message.cut && <p className="agent-note">（回答可能不完整）</p>}
+                    {message.cut && (
+                      <p className="agent-note">
+                        {tr('（回答可能不完整）', '(The answer may be incomplete)')}
+                      </p>
+                    )}
                     {message.error && (
                       <p className="message error" role="alert">
                         {message.error}
@@ -459,7 +503,7 @@ export default function AgentChat({ onNavigate }) {
             }}
           >
             <label className="sr-only" htmlFor="agent-message">
-              给 AI 助手的消息
+              {tr('给 AI 助手的消息', 'Message to the AI assistant')}
             </label>
             <textarea
               id="agent-message"
@@ -467,7 +511,7 @@ export default function AgentChat({ onNavigate }) {
               rows={1}
               maxLength={4000}
               value={draft}
-              placeholder="问点什么…"
+              placeholder={tr('问点什么…', 'Ask anything…')}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -476,12 +520,17 @@ export default function AgentChat({ onNavigate }) {
                 }
               }}
             />
-            <button type="submit" disabled={busy || !draft.trim()} aria-label="发送">
+            <button type="submit" disabled={busy || !draft.trim()} aria-label={tr('发送', 'Send')}>
               <Icon name="arrow" size={18} />
             </button>
           </form>
           <div className="agent-footer">
-            <span>AI 可能出错，重要信息请核对</span>
+            <span>
+              {tr(
+                'AI 可能出错，重要信息请核对',
+                'AI can make mistakes. Check important information.',
+              )}
+            </span>
           </div>
         </>
       )}

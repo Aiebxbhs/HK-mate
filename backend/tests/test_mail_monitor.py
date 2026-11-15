@@ -47,7 +47,7 @@ def monitored(mailbox, monkeypatch):
             raw["labelIds"] = ["SENT"]
         return raw
 
-    def summarize(mail):
+    def summarize(mail, language="zh"):
         return SummaryResult(
             EmailSummary(
                 overview="课程团队发布了作业，请您核对提交要求。",
@@ -113,7 +113,7 @@ def test_failures_retry_and_expired_history_recovery(monitored, monkeypatch):
     monitor.poll_once()
     original = monitor.summarizer.summarize
 
-    def fail(mail):
+    def fail(mail, language="zh"):
         raise SummaryError("SUMMARY_TIMEOUT")
 
     monkeypatch.setattr(monitor.summarizer, "summarize", fail)
@@ -336,7 +336,7 @@ def test_failed_labels_retry_later_missing_mail_is_dropped_and_restart_recovers(
             raise AuthError("MAIL_NOT_FOUND", "Synthetic missing mail", 404)
         return original_message(token, id, full)
 
-    def fail(mail):
+    def fail(mail, language="zh"):
         raise SummaryError("SUMMARY_TIMEOUT")
 
     monkeypatch.setattr(monitor.mail.google, "message", message)

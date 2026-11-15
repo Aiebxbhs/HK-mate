@@ -1,17 +1,28 @@
 // One recording segment: microphone -> 16 kHz PCM -> WebSocket -> captions.
 // Audio never leaves this machine (the backend runs locally) and is not stored anywhere.
 
+import { getLanguage, tr } from '../i18n'
+
 export const STREAM_PATH = '/api/v1/lecture/stream'
 
 export function streamUrl(location = window.location) {
   const scheme = location.protocol === 'https:' ? 'wss' : 'ws'
-  return `${scheme}://${location.host}${STREAM_PATH}`
+  // English pages get English error messages from the server.
+  const query = getLanguage() === 'en' ? '?lang=en' : ''
+  return `${scheme}://${location.host}${STREAM_PATH}${query}`
 }
 
-const MIC_ERRORS = {
-  NotAllowedError: '浏览器没有获得麦克风权限，请在地址栏的网站设置中允许麦克风后重试。',
-  NotFoundError: '没有找到可用的麦克风。',
-  NotReadableError: '麦克风正被其他应用占用。',
+function micError(name) {
+  return (
+    {
+      NotAllowedError: tr(
+        '浏览器没有获得麦克风权限，请在地址栏的网站设置中允许麦克风后重试。',
+        'The browser has no microphone permission. Allow the microphone in the site settings next to the address bar, then try again.',
+      ),
+      NotFoundError: tr('没有找到可用的麦克风。', 'No microphone was found.'),
+      NotReadableError: tr('麦克风正被其他应用占用。', 'The microphone is in use by another app.'),
+    }[name] || tr('无法打开麦克风。', "Can't open the microphone.")
+  )
 }
 
 /**
@@ -24,7 +35,8 @@ export async function startLectureStream(handlers, deps = {}) {
   const media = deps.mediaDevices ?? navigator.mediaDevices
   const makeContext = deps.makeContext ?? ((options) => new AudioContext(options))
   const makeSocket = deps.makeSocket ?? ((url) => new WebSocket(url))
-  if (!media?.getUserMedia) throw new Error('当前浏览器不支持录音。')
+  if (!media?.getUserMedia)
+    throw new Error(tr('当前浏览器不支持录音。', "This browser can't record audio."))
 
   let stream
   try {
@@ -37,7 +49,7 @@ export async function startLectureStream(handlers, deps = {}) {
       },
     })
   } catch (cause) {
-    throw new Error(MIC_ERRORS[cause?.name] || '无法打开麦克风。', { cause })
+    throw new Error(micError(cause?.name), { cause })
   }
 
   const context = makeContext({ sampleRate: 16000 })
@@ -48,7 +60,13 @@ export async function startLectureStream(handlers, deps = {}) {
   } catch (cause) {
     stream.getTracks().forEach((track) => track.stop())
     await context.close?.()
-    throw new Error('浏览器无法启动录音处理，请使用最新版 Chrome 或 Safari。', { cause })
+    throw new Error(
+      tr(
+        '浏览器无法启动录音处理，请使用最新版 Chrome 或 Safari。',
+        "The browser can't start audio processing. Use the latest Chrome or Safari.",
+      ),
+      { cause },
+    )
   }
   const source = context.createMediaStreamSource(stream)
   source.connect(node)
@@ -92,12 +110,17 @@ export async function startLectureStream(handlers, deps = {}) {
     else if (message.type === 'translation') handlers.onTranslation?.(message)
     else if (message.type === 'error') {
       stopMicrophone()
-      handlers.onError?.(message.message || '实时字幕出错。')
+      handlers.onError?.(message.message || tr('实时字幕出错。', 'Live captions hit an error.'))
     }
   }
   socket.onerror = () => {
     stopMicrophone()
-    handlers.onError?.('无法连接实时字幕服务，请确认本地后端正在运行。')
+    handlers.onError?.(
+      tr(
+        '无法连接实时字幕服务，请确认本地后端正在运行。',
+        "Can't connect to live captions. Make sure the local backend is running.",
+      ),
+    )
   }
   socket.onclose = () => {
     stopMicrophone()

@@ -320,3 +320,12 @@ def test_a_whole_lecture_fits_in_one_request(lectures):
     # Other endpoints keep the small limit.
     big_event = {"title": "x", "description": "y" * 20_000}
     assert write(lectures, "POST", "/api/v1/calendar/events", big_event).status_code == 413
+
+
+def test_english_accounts_get_an_english_summary_without_retry():
+    seen = []
+    english = REDUCE_OUTPUT | {"overview": "This lecture compared SGD and Adam."}
+    result = summarizer(scripted(MAP_OUTPUT, english, seen=seen)).summarize(LINES, [], "en")
+    assert result["overview"] == "This lecture compared SGD and Adam."
+    assert len(seen) == 2  # one map call and one reduce call, no Chinese retry
+    assert seen[1]["messages"][0]["content"].startswith("You write an after-class summary")

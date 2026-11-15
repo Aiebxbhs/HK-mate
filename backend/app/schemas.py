@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -16,6 +17,8 @@ class LoginInput(BaseModel):
 
 class RegisterInput(LoginInput):
     username: str = Field(min_length=3, max_length=32, pattern=r"^[a-z0-9_]+$")
+    # The language chosen on the sign-up page; the account starts with it.
+    language: Literal["zh", "en"] = "zh"
 
 
 class PasswordChangeInput(BaseModel):
@@ -24,10 +27,16 @@ class PasswordChangeInput(BaseModel):
     new_password: str = Field(min_length=12, max_length=128)
 
 
+class LanguageInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    language: Literal["zh", "en"]
+
+
 class UserOutput(BaseModel):
     id: str
     username: str
     display_name: str
+    language: Literal["zh", "en"]
     created_at: datetime
 
 

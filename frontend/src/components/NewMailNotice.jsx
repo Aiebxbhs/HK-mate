@@ -5,6 +5,7 @@ import MailCategoryTag from './MailCategoryTag'
 import ReplyDraftPanel from './ReplyDraftPanel'
 import ScheduleForm from './ScheduleForm'
 import Skeleton from './Skeleton'
+import { locale, mailText, tr } from '../i18n'
 
 /** Fired when the number of new-mail notices changes, so the "邮件" tab count follows. */
 export const MAIL_NOTICES_CHANGED = 'hkm:mail-notices-changed'
@@ -16,8 +17,8 @@ function ScheduleFromMail({ onClose }) {
     return (
       <div className="schedule-saved" role="status">
         <p>
-          已加入“我的日程”：{saved.title}，
-          {new Intl.DateTimeFormat('zh-CN', {
+          {tr(`已加入“我的日程”：${saved.title}，`, `Added to My schedule: ${saved.title}, `)}
+          {new Intl.DateTimeFormat(locale(), {
             timeZone: 'Asia/Hong_Kong',
             month: 'numeric',
             day: 'numeric',
@@ -25,10 +26,10 @@ function ScheduleFromMail({ onClose }) {
             hour: '2-digit',
             minute: '2-digit',
           }).format(new Date(saved.starts_at))}
-          。
+          {tr('。', '.')}
         </p>
         <button type="button" className="mail-primary" onClick={onClose}>
-          完成
+          {tr('完成', 'Done')}
         </button>
       </div>
     )
@@ -80,15 +81,24 @@ function MessageDialog({ kind, notification, onClose }) {
     >
       <div className="preview-dialog-heading">
         <span className="home-preview-label">
-          {kind === 'mail' ? '原邮件 · 只读' : kind === 'reply' ? '起草回复' : '加入日程'}
+          {kind === 'mail'
+            ? tr('原邮件 · 只读', 'Original email · read-only')
+            : kind === 'reply'
+              ? tr('起草回复', 'Draft a reply')
+              : tr('加入日程', 'Add to schedule')}
         </span>
-        <button type="button" className="sidebar-close" aria-label="关闭邮件窗口" onClick={onClose}>
+        <button
+          type="button"
+          className="sidebar-close"
+          aria-label={tr('关闭邮件窗口', 'Close')}
+          onClick={onClose}
+        >
           <Icon name="close" size={19} />
         </button>
       </div>
-      <h2 id="notification-dialog-title">{notification.subject}</h2>
+      <h2 id="notification-dialog-title">{mailText(notification.subject)}</h2>
       <p className="preview-dialog-meta">
-        {notification.sender} · {notification.mailbox}
+        {mailText(notification.sender)} · {notification.mailbox}
       </p>
       {kind === 'mail' ? (
         error ? (
@@ -97,13 +107,18 @@ function MessageDialog({ kind, notification, onClose }) {
           </p>
         ) : mail ? (
           <>
-            <div className="mail-body-text">{mail.body}</div>
+            <div className="mail-body-text">{mailText(mail.body)}</div>
             {mail.attachments.length > 0 && (
-              <p className="preview-dialog-note">附件：{mail.attachments.join('、')}（未下载）</p>
+              <p className="preview-dialog-note">
+                {tr(
+                  `附件：${mail.attachments.join('、')}（未下载）`,
+                  `Attachments: ${mail.attachments.join(', ')} (not downloaded)`,
+                )}
+              </p>
             )}
           </>
         ) : (
-          <Skeleton label="正在读取原邮件…" rows={5} variant="text" />
+          <Skeleton label={tr('正在读取原邮件…', 'Loading email…')} rows={5} variant="text" />
         )
       ) : kind === 'reply' ? (
         <ReplyDraftPanel
@@ -141,7 +156,13 @@ export default function NewMailNotice() {
         let cursor = first.next_cursor
         const seen = new Set()
         while (cursor && active) {
-          if (seen.has(cursor)) throw new Error('通知分页暂不可用，请稍后重试。')
+          if (seen.has(cursor))
+            throw new Error(
+              tr(
+                '通知分页暂不可用，请稍后重试。',
+                'Paging is unavailable right now. Please try again later.',
+              ),
+            )
           seen.add(cursor)
           const page = await api.notifications(cursor)
           all.push(...page.items)
@@ -158,7 +179,10 @@ export default function NewMailNotice() {
         previousCount.current = first.total_count
       } catch (cause) {
         if (active) {
-          setError(cause.message || '新邮件通知暂时无法更新。')
+          setError(
+            cause.message ||
+              tr('新邮件通知暂时无法更新。', "New-mail notices can't be updated right now."),
+          )
           if (cause.status === 401 || cause.status === 403) {
             authorized = false
             setMessages([])
@@ -218,19 +242,24 @@ export default function NewMailNotice() {
           <div className="new-mail-heading">
             <span className="new-mail-dot" aria-hidden="true" />
             <h2 id="new-mail-title" aria-live="polite">
-              {`${count} 封新邮件`}
+              {tr(`${count} 封新邮件`, `${count} new ${count === 1 ? 'email' : 'emails'}`)}
             </h2>
             <span className="new-mail-label">
-              {data?.enabled === false ? '自动检测已关闭' : '本地 Qwen 已自动摘要'}
+              {data?.enabled === false
+                ? tr('自动检测已关闭', 'Auto-check is off')
+                : tr('本地 Qwen 已自动摘要', 'Summarized by local Qwen')}
             </span>
           </div>
           {(!data || !data.connection_count || processing > 0) && (
             <p>
               {!data
-                ? '正在连接您的邮箱…'
+                ? tr('正在连接您的邮箱…', 'Connecting to your mailboxes…')
                 : !data.connection_count
-                  ? '请先在邮箱管理中连接 Gmail。'
-                  : `${processing} 封邮件正在排队或生成摘要…`}
+                  ? tr('请先在邮箱管理中连接 Gmail。', 'Connect Gmail in Mailboxes first.')
+                  : tr(
+                      `${processing} 封邮件正在排队或生成摘要…`,
+                      `${processing} queued or being summarized…`,
+                    )}
             </p>
           )}
         </div>
@@ -241,18 +270,22 @@ export default function NewMailNotice() {
             disabled={checking || data?.enabled === false}
             onClick={check}
           >
-            {checking ? '正在检查…' : '立即检查'}
+            {checking ? tr('正在检查…', 'Checking…') : tr('立即检查', 'Check now')}
           </button>
           {count > 0 && (
             <button
               type="button"
               className="link-button new-mail-list-toggle"
-              aria-label={`${expanded ? '收起新邮件' : '查看新邮件'}，共 ${count} 封`}
+              aria-label={
+                expanded
+                  ? tr(`收起新邮件，共 ${count} 封`, `Hide ${count} new emails`)
+                  : tr(`查看新邮件，共 ${count} 封`, `Show ${count} new emails`)
+              }
               aria-expanded={expanded}
               aria-controls="new-mail-list"
               onClick={() => setExpanded((value) => !value)}
             >
-              {expanded ? '收起' : '展开'}
+              {expanded ? tr('收起', 'Hide') : tr('展开', 'Show')}
               <Icon
                 name="chevron"
                 size={16}
@@ -274,14 +307,14 @@ export default function NewMailNotice() {
       ))}
       {data?.last_checked_at && (
         <p className="notification-last-check">
-          上次检查：
-          {new Date(data.last_checked_at).toLocaleTimeString('zh-CN', {
+          {tr('上次检查：', 'Last checked: ')}
+          {new Date(data.last_checked_at).toLocaleTimeString(locale(), {
             timeZone: 'Asia/Hong_Kong',
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
           })}
-          （香港时间）
+          {tr('（香港时间）', ' (Hong Kong time)')}
         </p>
       )}
       {expanded && messages.length > 0 && (
@@ -295,10 +328,10 @@ export default function NewMailNotice() {
                     pending={message.status !== 'failed'}
                     failed={message.status === 'failed'}
                   />
-                  <h3 id={`message-${message.id}`}>{message.subject}</h3>
+                  <h3 id={`message-${message.id}`}>{mailText(message.subject)}</h3>
                 </div>
                 <p className="new-mail-sender">
-                  <span>{message.sender}</span>
+                  <span>{mailText(message.sender)}</span>
                   <span>{message.mailbox}</span>
                 </p>
                 {message.status === 'ready' ? (
@@ -306,27 +339,30 @@ export default function NewMailNotice() {
                     <p className="new-mail-summary">{message.summary.overview}</p>
                     {message.summary.uncertainties.length > 0 && (
                       <p className="notification-note">
-                        {message.summary.uncertainties.join('；')}
+                        {message.summary.uncertainties.join(tr('；', '; '))}
                       </p>
                     )}
                   </>
                 ) : message.status === 'failed' ? (
                   <div className="message error">
-                    <span>{message.error || '摘要生成失败。'}</span>
+                    <span>{message.error || tr('摘要生成失败。', 'Summary failed.')}</span>
                     <button
                       type="button"
                       className="text-button"
                       disabled={busy.includes(message.id)}
                       onClick={() => change(message, 'retry')}
                     >
-                      重试摘要
+                      {tr('重试摘要', 'Retry summary')}
                     </button>
                   </div>
                 ) : (
                   <p className="new-mail-summary" role="status">
                     {message.status === 'processing'
-                      ? '本地模型正在生成摘要和分类…'
-                      : '已收到邮件，正在排队生成摘要…'}
+                      ? tr(
+                          '本地模型正在生成摘要和分类…',
+                          'The local model is summarizing and sorting…',
+                        )
+                      : tr('已收到邮件，正在排队生成摘要…', 'Received; waiting to be summarized…')}
                   </p>
                 )}
                 <div className="new-mail-actions">
@@ -335,7 +371,7 @@ export default function NewMailNotice() {
                     onClick={() => setPreview({ kind: 'mail', notification: message })}
                   >
                     <Icon name="mail" size={16} />
-                    查看原邮件
+                    {tr('查看原邮件', 'View email')}
                   </button>
                   <button
                     type="button"
@@ -343,14 +379,14 @@ export default function NewMailNotice() {
                     onClick={() => setPreview({ kind: 'schedule', notification: message })}
                   >
                     <Icon name="calendar" size={16} />
-                    加入日程
+                    {tr('加入日程', 'Add to schedule')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setPreview({ kind: 'reply', notification: message })}
                   >
                     <Icon name="pen" size={16} />
-                    起草回复
+                    {tr('起草回复', 'Draft reply')}
                   </button>
                   <button
                     type="button"
@@ -358,7 +394,7 @@ export default function NewMailNotice() {
                     disabled={busy.includes(message.id)}
                     onClick={() => change(message, 'dismiss')}
                   >
-                    忽略
+                    {tr('忽略', 'Dismiss')}
                   </button>
                 </div>
               </article>

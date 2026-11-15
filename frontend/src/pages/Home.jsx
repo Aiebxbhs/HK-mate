@@ -13,99 +13,200 @@ import Timetable from './Timetable'
 import LectureRecords from './LectureRecords'
 import Mailboxes from './Mailboxes'
 import Inbox from './Inbox'
+import { locale, setLanguage, tr, useLanguage } from '../i18n'
 
-// "我的邮箱" submenu. Summaries and reply drafts live in the inbox's AI assistant column.
-const mailboxPages = [
-  {
-    id: 'inbox',
-    icon: 'mail',
-    title: '统一收件箱',
-    description: '已连接邮箱的邮件集中在这里，可用本地 AI 摘要和起草回复。',
-  },
-  {
-    id: 'compose',
-    icon: 'pen',
-    title: '起草邮件',
-    description: '写下几个要点，本地 AI 起草新邮件；系统不会替你发送。',
-  },
-  {
-    id: 'mailboxes',
-    icon: 'mail-settings',
-    title: '邮箱管理',
-    description: '连接或解绑 Gmail，查看每个邮箱的连接状态。',
-  },
-]
-// "课程翻译" submenu (docs/LECTURE_TRANSLATION_PLAN.md). Course timing and notes work now;
-// speech recognition and live captions are added in later phases.
-const lecturePages = [
-  {
-    id: 'lecture-live',
-    icon: 'mic',
-    title: '实时翻译',
-    description: '英文讲课实时转成中英字幕，可记笔记，下课后生成摘要。',
-  },
-  {
-    id: 'lecture-records',
-    icon: 'book',
-    title: '课程记录',
-    description: '已保存的字幕、课堂笔记和课后摘要，按课程查找。',
-  },
-]
-// "HKU 指南" submenu: postgraduate guide from official HKU sources (app/guide_api.py).
-const guidePages = [
-  {
-    id: 'guide-library',
-    category: 'library',
-    icon: 'book',
-    title: '图书馆',
-    description: '开放、借阅、打印与 Main Library 逐层设施，来自港大官方来源。',
-  },
-  {
-    id: 'guide-transport',
-    category: 'transport',
-    icon: 'pin',
-    title: '交通与校园位置',
-    description: '港铁出口、巴士小巴与穿梭巴士路线，以及官方校园地图。',
-  },
-  {
-    id: 'guide-services',
-    category: 'services',
-    icon: 'user',
-    title: '学生服务与联系方式',
-    description: '成绩单、学费、健康与心理辅导、住宿就业等办事入口和联系方式。',
-  },
-]
-// "日程" section: the schedule list and the term timetable.
-const schedulePages = [
-  {
-    id: 'calendar',
-    icon: 'calendar',
-    title: '我的日程',
-    tab: '日程',
-    description: '接下来 100 天的课程和日程，可添加、编辑和完成截止事项。',
-  },
-  {
-    id: 'timetable',
-    icon: 'grid',
-    title: '我的课表',
-    tab: '课表',
-    description: '这学期的 HKU 课程，按周查看。',
-  },
-]
-// Top-level navigation: the same five places on desktop (top bar) and phone (tab bar).
-const sections = [
-  { id: 'overview', label: '今天', icon: 'grid', pages: [{ id: 'overview' }] },
-  { id: 'schedule', label: '日程', icon: 'calendar', pages: schedulePages },
-  { id: 'mail', label: '邮件', icon: 'mail', pages: mailboxPages },
-  { id: 'lecture', label: '课堂翻译', short: '翻译', icon: 'mic', pages: lecturePages },
-  { id: 'guide', label: 'HKU 指南', short: '指南', icon: 'pin', pages: guidePages },
-]
+// Page names are built at render time so they follow the interface language.
+function navigation() {
+  // "邮件" section. Summaries and reply drafts live in the inbox's AI assistant column.
+  const mailboxPages = [
+    {
+      id: 'inbox',
+      icon: 'mail',
+      title: tr('统一收件箱', 'Inbox'),
+      description: tr(
+        '已连接邮箱的邮件集中在这里，可用本地 AI 摘要和起草回复。',
+        'Mail from your connected mailboxes in one place, with local AI summaries and reply drafts.',
+      ),
+    },
+    {
+      id: 'compose',
+      icon: 'pen',
+      title: tr('起草邮件', 'Draft an email'),
+      description: tr(
+        '写下几个要点，本地 AI 起草新邮件；系统不会替你发送。',
+        'Write a few points and the local AI drafts a new email. HK Mate never sends it for you.',
+      ),
+    },
+    {
+      id: 'mailboxes',
+      icon: 'mail-settings',
+      title: tr('邮箱管理', 'Mailboxes'),
+      description: tr(
+        '连接或解绑 Gmail，查看每个邮箱的连接状态。',
+        'Connect or unlink Gmail and check each mailbox’s status.',
+      ),
+    },
+  ]
+  // "课堂翻译" section (docs/LECTURE.md).
+  const lecturePages = [
+    {
+      id: 'lecture-live',
+      icon: 'mic',
+      title: tr('实时翻译', 'Live translation'),
+      description: tr(
+        '英文讲课实时转成中英字幕，可记笔记，下课后生成摘要。',
+        'English lectures become live English–Chinese captions. Take notes and get a summary after class.',
+      ),
+    },
+    {
+      id: 'lecture-records',
+      icon: 'book',
+      title: tr('课程记录', 'Lecture records'),
+      description: tr(
+        '已保存的字幕、课堂笔记和课后摘要，按课程查找。',
+        'Saved captions, notes and summaries, grouped by course.',
+      ),
+    },
+  ]
+  // "HKU 指南" section: postgraduate guide from official HKU sources (app/guide_api.py).
+  const guidePages = [
+    {
+      id: 'guide-library',
+      category: 'library',
+      icon: 'book',
+      title: tr('图书馆', 'Library'),
+      description: tr(
+        '开放、借阅、打印与 Main Library 逐层设施，来自港大官方来源。',
+        'Opening, borrowing, printing and Main Library floor by floor, from official HKU sources.',
+      ),
+    },
+    {
+      id: 'guide-transport',
+      category: 'transport',
+      icon: 'pin',
+      title: tr('交通与校园位置', 'Transport & campus'),
+      description: tr(
+        '港铁出口、巴士小巴与穿梭巴士路线，以及官方校园地图。',
+        'MTR exits, bus, minibus and shuttle routes, and the official campus map.',
+      ),
+    },
+    {
+      id: 'guide-services',
+      category: 'services',
+      icon: 'user',
+      title: tr('学生服务与联系方式', 'Student services & contacts'),
+      description: tr(
+        '成绩单、学费、健康与心理辅导、住宿就业等办事入口和联系方式。',
+        'Transcripts, fees, health and counselling, housing and careers: where to go and whom to contact.',
+      ),
+    },
+  ]
+  // "日程" section: the schedule list and the term timetable.
+  const schedulePages = [
+    {
+      id: 'calendar',
+      icon: 'calendar',
+      title: tr('我的日程', 'My schedule'),
+      tab: tr('日程', 'Schedule'),
+      description: tr(
+        '接下来 100 天的课程和日程，可添加、编辑和完成截止事项。',
+        'Classes and events for the next 100 days. Add, edit and complete deadlines.',
+      ),
+    },
+    {
+      id: 'timetable',
+      icon: 'grid',
+      title: tr('我的课表', 'My timetable'),
+      tab: tr('课表', 'Timetable'),
+      description: tr('这学期的 HKU 课程，按周查看。', 'This term’s HKU classes, week by week.'),
+    },
+  ]
+  // Top-level navigation: the same five places on desktop (top bar) and phone (tab bar).
+  const sections = [
+    { id: 'overview', label: tr('今天', 'Today'), icon: 'grid', pages: [{ id: 'overview' }] },
+    { id: 'schedule', label: tr('日程', 'Schedule'), icon: 'calendar', pages: schedulePages },
+    { id: 'mail', label: tr('邮件', 'Mail'), icon: 'mail', pages: mailboxPages },
+    {
+      id: 'lecture',
+      label: tr('课堂翻译', 'Lectures'),
+      short: tr('翻译', 'Lectures'),
+      icon: 'mic',
+      pages: lecturePages,
+    },
+    {
+      id: 'guide',
+      label: tr('HKU 指南', 'HKU guide'),
+      short: tr('指南', 'Guide'),
+      icon: 'pin',
+      pages: guidePages,
+    },
+  ]
+  return { sections, guidePages }
+}
 
-function AccountDetails({ user }) {
+function LanguageSetting({ onUser }) {
+  const { language, t } = useLanguage()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function choose(next) {
+    if (next === language || busy) return
+    setBusy(true)
+    setError('')
+    try {
+      const updated = await api.setLanguage(next)
+      setLanguage(updated.language)
+      onUser?.(updated)
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="account-card language-setting">
+      <div>
+        <h3>{t('语言', 'Language')}</h3>
+        <p>
+          {t(
+            '界面、AI 助手回复和之后生成的摘要都会使用所选语言；课堂翻译仍为英译中。',
+            'The interface, AI assistant replies and new summaries use this language. Lecture translation stays English to Chinese.',
+          )}
+        </p>
+      </div>
+      <div className="segmented" role="group" aria-label={t('语言', 'Language')}>
+        {[
+          ['zh', '中文'],
+          ['en', 'English'],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={language === value ? 'active' : ''}
+            aria-pressed={language === value}
+            disabled={busy}
+            onClick={() => choose(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {error && (
+        <div className="message error" role="alert">
+          {error}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AccountDetails({ user, onUser }) {
+  const { t } = useLanguage()
   return (
     <section className="account-section" aria-labelledby="account-title">
       <div className="section-title">
-        <h2 id="account-title">我的账号</h2>
+        <h2 id="account-title">{t('我的账号', 'My account')}</h2>
       </div>
       <div className="account-card">
         <div className="avatar">{Array.from(user.display_name)[0]}</div>
@@ -114,10 +215,11 @@ function AccountDetails({ user }) {
           <p>{user.username}</p>
         </div>
         <div className="account-date">
-          <span>加入 HK Mate</span>
+          <span>{t('加入 HK Mate', 'Joined HK Mate')}</span>
           <strong>{formatJoined(user.created_at)}</strong>
         </div>
       </div>
+      <LanguageSetting onUser={onUser} />
       <PasswordChange username={user.username} />
     </section>
   )
@@ -125,7 +227,7 @@ function AccountDetails({ user }) {
 
 const pageIds = new Set([
   'account',
-  ...sections.flatMap((section) => section.pages.map((item) => item.id)),
+  ...navigation().sections.flatMap((section) => section.pages.map((item) => item.id)),
 ])
 
 function pageFromLocation() {
@@ -140,7 +242,7 @@ function pageUrl(page) {
 }
 
 function formatJoined(value) {
-  return new Intl.DateTimeFormat('zh-CN', {
+  return new Intl.DateTimeFormat(locale(), {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -170,6 +272,7 @@ function useMailCount(page) {
 }
 
 function AccountMenu({ user, current, busy, onAccount, onLogout }) {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const wrapper = useRef(null)
   const button = useRef(null)
@@ -199,7 +302,7 @@ function AccountMenu({ user, current, busy, onAccount, onLogout }) {
         ref={button}
         type="button"
         className={`avatar-button${current ? ' active' : ''}`}
-        aria-label="账号菜单"
+        aria-label={t('账号菜单', 'Account menu')}
         aria-expanded={open}
         aria-controls="account-menu-panel"
         onClick={() => setOpen((value) => !value)}
@@ -218,11 +321,11 @@ function AccountMenu({ user, current, busy, onAccount, onLogout }) {
             }}
           >
             <Icon name="user" size={17} />
-            我的账号
+            {t('我的账号', 'My account')}
           </button>
           <button type="button" onClick={onLogout} disabled={busy}>
             <Icon name="logout" size={17} />
-            {busy ? '正在退出…' : '退出登录'}
+            {busy ? t('正在退出…', 'Signing out…') : t('退出登录', 'Sign out')}
           </button>
         </div>
       )}
@@ -230,7 +333,9 @@ function AccountMenu({ user, current, busy, onAccount, onLogout }) {
   )
 }
 
-export default function Home({ user, onLogout, sessionError, onRetry }) {
+export default function Home({ user, onUser, onLogout, sessionError, onRetry }) {
+  const { t } = useLanguage()
+  const { sections, guidePages } = navigation()
   const [callbackStatus] = useState(() => new URLSearchParams(location.search).get('gmail'))
   const [page, setPage] = useState(pageFromLocation)
   const [direction, setDirection] = useState('forward')
@@ -316,11 +421,18 @@ export default function Home({ user, onLogout, sessionError, onRetry }) {
   const greeting = (
     <div className="home-greeting">
       <h1 ref={contentTitle} tabIndex={-1}>
-        {page === 'account' ? '账号信息' : selected.title}
+        {page === 'account' ? t('账号信息', 'Account') : selected.title}
       </h1>
-      <p>{page === 'account' ? '查看账号信息，修改登录密码。' : selected.description}</p>
+      <p>
+        {page === 'account'
+          ? t('查看账号信息，切换语言，修改登录密码。', 'Your account, language and password.')
+          : selected.description}
+      </p>
       {section && section.pages.length > 1 && (
-        <nav className="section-tabs" aria-label={`${section.label}页面`}>
+        <nav
+          className="section-tabs"
+          aria-label={t(`${section.label}页面`, `${section.label} pages`)}
+        >
           {section.pages.map((item) => (
             <button
               key={item.id}
@@ -340,7 +452,7 @@ export default function Home({ user, onLogout, sessionError, onRetry }) {
     <div className={`home-shell${page === 'inbox' ? ' inbox-view' : ''}`}>
       <header className="home-header">
         <Brand />
-        <nav className="main-nav" aria-label="主导航">
+        <nav className="main-nav" aria-label={t('主导航', 'Main navigation')}>
           {sections.map((item) => {
             const active = item === section
             const count = item.id === 'mail' ? mailCount : 0
@@ -350,7 +462,11 @@ export default function Home({ user, onLogout, sessionError, onRetry }) {
                 type="button"
                 className={`main-nav-link${active ? ' active' : ''}`}
                 aria-current={active ? 'page' : undefined}
-                aria-label={count ? `${item.label}，${count} 封新邮件` : item.label}
+                aria-label={
+                  count
+                    ? t(`${item.label}，${count} 封新邮件`, `${item.label}, ${count} new`)
+                    : item.label
+                }
                 onClick={() => navigate(item.pages[0].id)}
               >
                 <Icon name={item.icon} size={20} className="main-nav-icon" />
@@ -381,14 +497,14 @@ export default function Home({ user, onLogout, sessionError, onRetry }) {
             {error || sessionError}
             {sessionError && (
               <button className="text-button" onClick={onRetry}>
-                重新连接
+                {t('重新连接', 'Reconnect')}
               </button>
             )}
           </div>
         )}
         {page !== 'overview' && greeting}
         {page === 'account' ? (
-          <AccountDetails user={user} />
+          <AccountDetails user={user} onUser={onUser} />
         ) : page === 'mailboxes' ? (
           <Mailboxes
             callbackStatus={callbackStatus}
