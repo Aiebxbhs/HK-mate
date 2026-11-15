@@ -1,0 +1,16 @@
+Good afternoon everyone. Before we start, a quick reminder that assignment two is due next Friday at eleven fifty nine p.m., and you should submit it on Moodle.
+Today we will continue our discussion of training neural networks. Last week we derived backpropagation, so this week we focus on optimization.
+The simplest optimizer is stochastic gradient descent. Instead of computing the gradient over the whole training set, we estimate it from a small mini batch.
+The learning rate controls the step size. If it is too large, the loss will oscillate or even diverge. If it is too small, training becomes painfully slow.
+In practice we often use a learning rate schedule, for example cosine decay with a short warm up period at the beginning.
+Momentum helps the optimizer move faster along directions where the gradient is consistent, and it dampens oscillations across steep valleys.
+Adam combines momentum with an adaptive learning rate for each parameter, which is why it is the default choice for training transformers.
+Now let us talk about the loss function. For classification we usually minimize the cross entropy between the predicted distribution and the true labels.
+A common mistake is to apply a softmax twice, once in the model and once inside the loss. Please check this carefully in your code.
+Next, overfitting. When the training accuracy keeps improving but the validation accuracy starts to drop, your model is memorizing the training data.
+Regularization techniques such as weight decay, dropout, and data augmentation can reduce overfitting. Early stopping is also very effective.
+Batch normalization normalizes the activations within each mini batch, which stabilizes training and often allows a higher learning rate.
+This point will definitely appear in the final exam, so please make sure you understand the difference between batch normalization and layer normalization.
+Finally, attention. The key idea is that each token computes a weighted average of all other tokens, where the weights come from the similarity between queries and keys.
+For next week, please read chapter eight of the textbook and try the exercises at the end of the chapter. Office hours are on Wednesday from two to four p.m. in room CB three oh eight.
+Any questions? If not, let us take a ten minute break.

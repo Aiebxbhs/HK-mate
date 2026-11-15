@@ -1,0 +1,461 @@
+{
+  "verified": "2026-11-14",
+  "sources": [
+    {
+      "label": "港大图书馆：Main Library 楼层平面图",
+      "url": "https://lib.hku.hk/mainlib/floorplan.html"
+    },
+    {
+      "label": "港大图书馆：Main Library 设施与服务",
+      "url": "https://lib.hku.hk/mainlib/facilities.html"
+    },
+    {
+      "label": "港大图书馆：Main Library 学习空间",
+      "url": "https://lib.hku.hk/mainlib/studyplace.html"
+    },
+    {
+      "label": "港大图书馆：Main Library 馆藏位置",
+      "url": "https://lib.hku.hk/general/location/main_library.html"
+    },
+    {
+      "label": "港大图书馆：复印、打印、扫描",
+      "url": "https://lib.hku.hk/techsupport/photocopy.html"
+    },
+    {
+      "label": "港大图书馆：Level 3 各区",
+      "url": "https://lib.hku.hk/level3/zones.html"
+    },
+    {
+      "label": "港大图书馆：Main Library 简介与服务台",
+      "url": "https://lib.hku.hk/mainlib/index.html"
+    }
+  ],
+  "library": {
+    "name": "Main Library",
+    "intro": "Main Library 位于 Library Building，分 Old Wing（1961 年启用）和 New Wing（1991 年启用）；Level 3 位于 3/F。全馆超过 1,900 个座位，各层都有自习桌。",
+    "floors": [
+      {
+        "id": "6",
+        "label": "6/F",
+        "wings": [
+          "Old Wing"
+        ],
+        "spots": [
+          {
+            "kind": "collection",
+            "wing": "Old Wing",
+            "name": "Fung Ping Shan Library",
+            "text": "中文图书馆的一部分：中日文书籍，索书号 DS741–Z。"
+          }
+        ],
+        "printers": [
+          {
+            "number": "20",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": true
+          }
+        ]
+      },
+      {
+        "id": "5",
+        "label": "5/F",
+        "wings": [
+          "Old Wing"
+        ],
+        "spots": [
+          {
+            "kind": "collection",
+            "wing": "Old Wing",
+            "name": "Fung Ping Shan Library",
+            "text": "中日文书籍，索书号 A–DS740，以及大开本书籍和大型丛书。"
+          }
+        ],
+        "printers": [
+          {
+            "number": "24",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": true
+          }
+        ]
+      },
+      {
+        "id": "4",
+        "label": "4/F",
+        "wings": [
+          "Old Wing",
+          "New Wing"
+        ],
+        "spots": [
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "可预约自习桌",
+            "text": "4/F 有 64 个座位可在网上预约（Book a Study Table），规则见 Booking Policy。"
+          },
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Single Study Rooms（单人自习室）",
+            "text": "HKU / SPACE 学生和职员可在 Facilities Booking System 预约，每天 3 个时段，可提前 1 个时段预约；开始 60 分钟后未签到会释放。"
+          },
+          {
+            "kind": "collection",
+            "wing": "Old Wing",
+            "name": "西文书籍 001–299",
+            "text": "另有 Education Collection 书籍，以及 Fung Ping Shan Library 的中文参考书和期刊。"
+          },
+          {
+            "kind": "collection",
+            "wing": "New Wing",
+            "name": "西文书籍 300–399",
+            "text": "以及 001–399 的参考书和期刊。"
+          }
+        ],
+        "printers": [
+          {
+            "number": "17",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "label": "3/F",
+        "wings": [
+          "Old Wing",
+          "New Wing"
+        ],
+        "spots": [
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Tin Ka Ping Education Library（讨论室）",
+            "text": "18 间讨论室需在网上预约，每人每天最多 2 小时，开始 15 分钟内未签到会释放；另有不需预约的协作学习区。可在 2/F Lending Services Counter 借笔记本电脑带进讨论室。"
+          },
+          {
+            "kind": "tech",
+            "wing": null,
+            "name": "Technology Zone（电脑区）",
+            "text": "100 多台电脑，可在网上预约；装有 Microsoft Office、EndNote 等，部分电脑有 SPSS、NVivo 和扫描仪（A3 平板扫描：66、73 号电脑）。"
+          },
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Study Zone（安静自习区）",
+            "text": "各种单人座位，适合安静自习；Level 3 其他区域允许小声讨论。"
+          },
+          {
+            "kind": "collection",
+            "wing": null,
+            "name": "Ko Wong Wai Ching Wendy Fine Arts Digital Library",
+            "text": "艺术数字图书馆，也在 Level 3。"
+          }
+        ],
+        "printers": [
+          {
+            "number": "L3-4",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-5",
+            "wing": "New Wing",
+            "print_mode": "colour",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-6",
+            "wing": "New Wing",
+            "print_mode": "colour",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-7",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-8",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-9",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-10",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-2",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "L3-1",
+            "wing": "Old Wing",
+            "print_mode": "colour",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "label": "2/F",
+        "wings": [
+          "Old Wing",
+          "New Wing"
+        ],
+        "spots": [
+          {
+            "kind": "service",
+            "wing": "New Wing",
+            "name": "Lending Services Counter（借还服务台）",
+            "text": "借还书、领取预约书和馆际互借资料；可借笔记本电脑、平板、降噪耳机等设备。旁边有 Add Value Machine，可用八达通充值打印额度。"
+          },
+          {
+            "kind": "service",
+            "wing": null,
+            "name": "Enquiries Counter（咨询台）",
+            "text": "办理图书馆会员、可进入其他非 UGC 图书馆的读者证等。"
+          },
+          {
+            "kind": "service",
+            "wing": "New Wing",
+            "name": "Self-Service Collection",
+            "text": "拍学生证进入，取课程指定参考书（course reserve）和自己预约的书（按姓氏字母排列）；室内有 A3 高拍扫描仪。"
+          },
+          {
+            "kind": "tech",
+            "wing": "New Wing",
+            "name": "Battery Charging Stations（充电站）",
+            "text": "在 Atrium 旁，有 Type-C、Lightning、Micro-B 线，可同时充 7 台设备；有人等候时请不超过 30 分钟。"
+          },
+          {
+            "kind": "tech",
+            "wing": null,
+            "name": "Ingenium",
+            "text": "跨学科科技空间，含展览与活动区、Library Innovation Centre 和 Tech@Ingenium。"
+          },
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Special Study Room",
+            "text": "供视障学生使用，配有读屏软件和盲文设备，经 CEDARS 登记的学生拍卡进入。"
+          },
+          {
+            "kind": "collection",
+            "wing": "Old Wing",
+            "name": "西文书籍 900–999",
+            "text": "以及同号段的参考书和期刊。"
+          }
+        ],
+        "printers": [
+          {
+            "number": "5",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": true
+          },
+          {
+            "number": "32",
+            "wing": "Old Wing",
+            "print_mode": "colour",
+            "copy_mode": "colour",
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "11",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "30",
+            "wing": "New Wing",
+            "print_mode": "colour",
+            "copy_mode": "colour",
+            "wifi": true,
+            "scan": true
+          },
+          {
+            "number": "31",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          }
+        ]
+      },
+      {
+        "id": "1",
+        "label": "1/F",
+        "wings": [
+          "Old Wing",
+          "New Wing"
+        ],
+        "spots": [
+          {
+            "kind": "collection",
+            "wing": "New Wing",
+            "name": "AV Collection（影音资料）",
+            "text": "影音资料，以及 400–599 的参考书和期刊。"
+          },
+          {
+            "kind": "collection",
+            "wing": "New Wing",
+            "name": "Special Collections",
+            "text": "香港资料、缩微资料、珍本和 WTO 资料；部分资料需在 Special Collections Counter 申请。"
+          },
+          {
+            "kind": "service",
+            "wing": null,
+            "name": "HKU Archives（大学档案馆）",
+            "text": "1/F Rm 114–117，只限馆内阅览，到访前需发邮件申请资料。"
+          },
+          {
+            "kind": "collection",
+            "wing": "Old Wing",
+            "name": "西文书籍 400–599、700–799",
+            "text": "另有 Music Collection（书、乐谱和影音资料）。"
+          }
+        ],
+        "printers": [
+          {
+            "number": "13",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": null,
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "15",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "33",
+            "wing": "Old Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": true
+          }
+        ]
+      },
+      {
+        "id": "G",
+        "label": "G/F",
+        "wings": [
+          "Old Wing",
+          "New Wing"
+        ],
+        "spots": [
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Library 24 Study Hub",
+            "text": "与图书馆主体分开，24 小时开放给 HKU 职员和学生，入口面向 Sun Yat-sen Steps；闭馆后紧急情况可致电 Security Control Centre 3917-2882。"
+          },
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Think Tank",
+            "text": "从 G/F Ancillary Entrance 进入，依次是 Social Space、Leisure Study Space，再往里是 Quiet Study Space 和 Deep Quiet Study Space，另有 Special Collections Joseph Needham Room 和 Seminar Room。"
+          },
+          {
+            "kind": "study",
+            "wing": null,
+            "name": "Research Carrels（研究隔间）",
+            "text": "带储物柜，只供 HKU 修读硕士或博士课程的 higher degree students 使用；按半个月分配，网上申请后抽签，获分配后需在首 3 天内签到；详情可到 2/F 服务台查询。"
+          },
+          {
+            "kind": "tech",
+            "wing": null,
+            "name": "E-Learning Lab",
+            "text": "多用途小型讲室，46 个座位，每个座位配联网电脑，用于图书馆讲座和研讨会。"
+          },
+          {
+            "kind": "collection",
+            "wing": "New Wing",
+            "name": "西文书籍 600–699、800–899",
+            "text": "另有大开本书籍和 Leisure Reading Collection（休闲读物）。"
+          }
+        ],
+        "printers": [
+          {
+            "number": "1",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "8",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": false
+          },
+          {
+            "number": "23",
+            "wing": "New Wing",
+            "print_mode": "bw",
+            "copy_mode": "bw",
+            "wifi": true,
+            "scan": true
+          }
+        ]
+      }
+    ]
+  }
+}

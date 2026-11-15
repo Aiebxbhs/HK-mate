@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HK Mate 标志方案</title>
+<style>
+:root {
+  --bg: #f3efea;
+  --ink: #2a2724;
+  --muted: #6b655f;
+  --line: #e7e1d9;
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Segoe UI', sans-serif;
+  --serif: 'New York', 'Iowan Old Style', 'Palatino', Georgia, serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 32px 16px 48px; background: #e4ded7; font-family: var(--sans); color: var(--ink); }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; max-width: 1120px; margin: 0 auto; }
+.option { position: relative; overflow: hidden; isolation: isolate; border-radius: 26px; background: var(--bg); padding: 22px 26px 26px; }
+.option::before { content: ''; position: absolute; z-index: -1; width: 420px; height: 420px; right: -160px; top: -200px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,170,110,.38) 0, rgba(255,190,140,.14) 40%, rgba(243,239,234,0) 70%); }
+.tag { font-size: 14px; color: var(--muted); margin: 0 0 4px; }
+.name { font-size: 18px; margin: 0 0 4px; }
+.hero { display: grid; place-items: center; min-height: 200px; }
+.bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; margin-top: 8px; border-radius: 14px; background: rgba(246,243,239,.9); border: 1px solid var(--line); }
+.bar nav { display: flex; gap: 14px; font-size: 13px; color: var(--muted); }
+.bar nav b { font-weight: 400; color: var(--ink); }
+
+/* Shared orb: the same warm light used in the page background. */
+.orb { display: inline-block; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #ffd9bd 0%, #f6a46c 48%, #ec7f3e 100%); }
+
+/* A — orb + wordmark */
+.a { display: inline-flex; align-items: center; gap: .32em; font-size: 60px; letter-spacing: -.035em; }
+.a .orb { width: .62em; height: .62em; }
+.a span { font-weight: 300; } .a strong { font-weight: 500; }
+
+/* B — sunrise over the wordmark */
+.b { position: relative; display: inline-block; font-size: 60px; font-weight: 300; letter-spacing: -.04em; padding-top: .28em; }
+.b .orb { position: absolute; left: 50%; top: 0; width: .5em; height: .25em; margin-left: -.25em; border-radius: .25em .25em 0 0;
+  background: linear-gradient(180deg, #f6a46c, #ec7f3e); }
+.b strong { font-weight: 500; }
+
+/* C — serif wordmark, orb as the full stop */
+.c { display: inline-flex; align-items: baseline; font-family: var(--serif); font-size: 62px; letter-spacing: -.02em; }
+.c .orb { width: .17em; height: .17em; margin-left: .06em; }
+
+/* D — app tile + light wordmark */
+.d { display: inline-flex; align-items: center; gap: .38em; font-size: 54px; font-weight: 300; letter-spacing: -.035em; }
+.tile { position: relative; display: grid; place-items: center; width: 1.25em; height: 1.25em; border-radius: .34em;
+  background: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,.9); box-shadow: 0 6px 18px rgba(42,39,36,.08);
+  font-size: 1em; font-weight: 500; letter-spacing: -.06em; color: var(--ink); }
+.tile i { font-style: normal; font-size: .62em; }
+.tile .orb { position: absolute; right: .17em; top: .17em; width: .2em; height: .2em; }
+
+.small { font-size: 21px !important; }
+</style>
+</head>
+<body>
+<div class="grid">
+  <section class="option">
+    <p class="tag">方案 A</p><p class="name">光球 + 文字</p>
+    <div class="hero"><span class="a"><span class="orb"></span><span>HK</span><strong>Mate</strong></span></div>
+    <div class="bar"><span class="a small"><span class="orb"></span><span>HK</span><strong>Mate</strong></span><nav><b>今天</b><span>日程</span><span>邮件</span></nav></div>
+  </section>
+
+  <section class="option">
+    <p class="tag">方案 B</p><p class="name">日出</p>
+    <div class="hero"><span class="b"><span class="orb"></span>HK <strong>Mate</strong></span></div>
+    <div class="bar"><span class="b small"><span class="orb"></span>HK <strong>Mate</strong></span><nav><b>今天</b><span>日程</span><span>邮件</span></nav></div>
+  </section>
+
+  <section class="option">
+    <p class="tag">方案 C</p><p class="name">衬线字 + 光点句号</p>
+    <div class="hero"><span class="c">HK Mate<span class="orb"></span></span></div>
+    <div class="bar"><span class="c small">HK Mate<span class="orb"></span></span><nav><b>今天</b><span>日程</span><span>邮件</span></nav></div>
+  </section>
+
+  <section class="option">
+    <p class="tag">方案 D</p><p class="name">图标方块 + 细字</p>
+    <div class="hero"><span class="d"><span class="tile"><i>hk</i><span class="orb"></span></span>HK Mate</span></div>
+    <div class="bar"><span class="d small"><span class="tile"><i>hk</i><span class="orb"></span></span>HK Mate</span><nav><b>今天</b><span>日程</span><span>邮件</span></nav></div>
+  </section>
+</div>
+</body>
+</html>

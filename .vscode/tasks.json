@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [{
+    "label": "HK Mate: 启动本地页面与 API",
+    "type": "shell",
+    "command": "bash scripts/dev.sh",
+    "options": { "cwd": "${workspaceFolder}" },
+    "isBackground": true,
+    "problemMatcher": [],
+    "presentation": { "reveal": "always", "panel": "dedicated" }
+  }, {
+    "label": "HK Mate: 检查全部代码",
+    "type": "shell",
+    "command": "bash scripts/check.sh",
+    "options": { "cwd": "${workspaceFolder}" },
+    "problemMatcher": []
+  }]
+}

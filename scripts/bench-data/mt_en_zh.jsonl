@@ -1,0 +1,50 @@
+{"en": "Good afternoon everyone, let's get started.", "zh": "大家下午好，我们开始吧。"}
+{"en": "Assignment two is due next Friday at 11:59 p.m.", "zh": "作业二的截止时间是下周五晚上11:59。"}
+{"en": "Please submit your report and code on Moodle.", "zh": "请在Moodle上提交你的报告和代码。"}
+{"en": "Late submissions will receive a twenty percent penalty per day.", "zh": "迟交每天扣百分之二十的分数。"}
+{"en": "Today we will continue our discussion of training neural networks.", "zh": "今天我们继续讨论神经网络的训练。"}
+{"en": "Last week we derived backpropagation, so this week we focus on optimization.", "zh": "上周我们推导了反向传播，所以本周我们重点讲优化。"}
+{"en": "The simplest optimizer is stochastic gradient descent.", "zh": "最简单的优化器是随机梯度下降。"}
+{"en": "Instead of using the whole training set, we estimate the gradient from a small mini-batch.", "zh": "我们不使用整个训练集，而是用一个小批量来估计梯度。"}
+{"en": "The learning rate controls the step size of each update.", "zh": "学习率控制每次更新的步长。"}
+{"en": "If the learning rate is too large, the loss may oscillate or even diverge.", "zh": "如果学习率太大，损失可能会震荡甚至发散。"}
+{"en": "If it is too small, training becomes painfully slow.", "zh": "如果学习率太小，训练会变得非常慢。"}
+{"en": "In practice we often use cosine decay with a short warm-up period.", "zh": "在实践中，我们常使用带有短暂预热阶段的余弦衰减。"}
+{"en": "Momentum helps the optimizer move faster along consistent gradient directions.", "zh": "动量帮助优化器沿着梯度一致的方向更快地前进。"}
+{"en": "Adam combines momentum with an adaptive learning rate for each parameter.", "zh": "Adam将动量与每个参数的自适应学习率结合起来。"}
+{"en": "That is why Adam is the default choice for training transformers.", "zh": "这就是为什么Adam是训练Transformer的默认选择。"}
+{"en": "For classification, we usually minimize the cross-entropy loss.", "zh": "对于分类问题，我们通常最小化交叉熵损失。"}
+{"en": "A common mistake is to apply softmax twice, once in the model and once in the loss.", "zh": "一个常见的错误是应用了两次softmax，一次在模型里，一次在损失函数里。"}
+{"en": "Please check this carefully in your code.", "zh": "请在你的代码中仔细检查这一点。"}
+{"en": "When training accuracy keeps improving but validation accuracy drops, the model is overfitting.", "zh": "当训练准确率持续提高而验证准确率下降时，模型就过拟合了。"}
+{"en": "Your model is simply memorizing the training data.", "zh": "你的模型只是在记忆训练数据。"}
+{"en": "Weight decay, dropout and data augmentation can all reduce overfitting.", "zh": "权重衰减、dropout和数据增强都可以减少过拟合。"}
+{"en": "Early stopping is also a very effective form of regularization.", "zh": "早停也是一种非常有效的正则化方法。"}
+{"en": "Batch normalization normalizes the activations within each mini-batch.", "zh": "批量归一化对每个小批量内的激活值进行归一化。"}
+{"en": "This stabilizes training and often allows a higher learning rate.", "zh": "这能稳定训练，并且通常允许使用更高的学习率。"}
+{"en": "This point will definitely appear in the final exam.", "zh": "这一点一定会出现在期末考试中。"}
+{"en": "Make sure you understand the difference between batch normalization and layer normalization.", "zh": "请确保你理解批量归一化和层归一化之间的区别。"}
+{"en": "In attention, each token computes a weighted average of all other tokens.", "zh": "在注意力机制中，每个词元计算所有其他词元的加权平均。"}
+{"en": "The weights come from the similarity between queries and keys.", "zh": "这些权重来自查询和键之间的相似度。"}
+{"en": "We divide by the square root of the dimension to keep the dot products from growing too large.", "zh": "我们除以维度的平方根，以防止点积变得过大。"}
+{"en": "Multi-head attention lets the model attend to different subspaces at the same time.", "zh": "多头注意力让模型能够同时关注不同的子空间。"}
+{"en": "Positional encodings are needed because attention itself has no notion of order.", "zh": "需要位置编码，因为注意力本身没有顺序的概念。"}
+{"en": "Let me write the formula on the board.", "zh": "我把公式写在黑板上。"}
+{"en": "The derivative of the sigmoid function is sigmoid times one minus sigmoid.", "zh": "sigmoid函数的导数等于sigmoid乘以一减sigmoid。"}
+{"en": "ReLU avoids the vanishing gradient problem for positive inputs.", "zh": "对于正输入，ReLU避免了梯度消失问题。"}
+{"en": "Can everyone see the slides clearly at the back?", "zh": "后排的同学都能看清幻灯片吗？"}
+{"en": "Does anyone have a question so far?", "zh": "到目前为止大家有什么问题吗？"}
+{"en": "That's a great question, and I'll come back to it later.", "zh": "这个问题很好，我稍后再回来讲。"}
+{"en": "For next week, please read chapter eight of the textbook.", "zh": "下周之前，请阅读教材第八章。"}
+{"en": "Try the exercises at the end of the chapter before the tutorial.", "zh": "在辅导课之前尝试完成本章末尾的练习。"}
+{"en": "Office hours are on Wednesday from two to four in room CB308.", "zh": "答疑时间是周三两点到四点，在CB308室。"}
+{"en": "The midterm will cover everything up to lecture six.", "zh": "期中考试将涵盖到第六讲为止的所有内容。"}
+{"en": "You are allowed to bring one A4 cheat sheet to the exam.", "zh": "考试时你可以带一张A4的备忘纸。"}
+{"en": "The project proposal should be no longer than two pages.", "zh": "项目提案不应超过两页。"}
+{"en": "Each group should have three to four members.", "zh": "每组应有三到四名成员。"}
+{"en": "I will post the solutions on Moodle after the deadline.", "zh": "截止日期过后，我会把答案发布在Moodle上。"}
+{"en": "Let's take a ten-minute break and continue afterwards.", "zh": "我们休息十分钟，然后继续。"}
+{"en": "The intuition here is more important than the exact derivation.", "zh": "这里的直觉比精确的推导更重要。"}
+{"en": "In other words, the model learns which parts of the input to focus on.", "zh": "换句话说，模型学会了关注输入的哪些部分。"}
+{"en": "We will see a concrete example in the next lab session.", "zh": "我们将在下一次实验课中看到一个具体的例子。"}
+{"en": "That's all for today, see you next week.", "zh": "今天就到这里，我们下周见。"}
