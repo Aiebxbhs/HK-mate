@@ -97,6 +97,7 @@ async def list_email_connections(
 - 组件处理展示与交互，业务状态放在对应功能或 Hook；不提前引入全局状态库。
 - 若使用 TypeScript，开启严格类型检查；外部返回值仍需按边界校验，类型断言不能替代校验。
 - API JSON 保持 snake_case；前端原样使用传输字段，若转换为 camelCase，统一在 API 边界处理，禁止各组件自行转换。
+- 界面文案（2026-11-15）：中英文成对写在代码旁，组件内用 `useLanguage()` 返回的 `t('中文', 'English')`，组件外的渲染期代码用 `tr()`（`src/i18n.js`）；模块级常量里的文案改为函数或 getter，保证切换语言后重新取值。日期用 `locale()` 格式化。不引入 i18n 库。
 
 ### 3.3 注释、文档与复杂度
 
@@ -125,6 +126,7 @@ async def list_email_connections(
 | POST | `/api/v1/auth/logout` | 退出，具体失效机制随认证方案落实 | 204 |
 | POST | `/api/v1/auth/password` | 修改密码：校验当前密码，新密码 12–128 字符且不同于当前密码；成功后退出该账号其他设备上的登录，当前会话保留；按账号与 IP 限频（15 分钟 5 次）；当前密码错误返回 400 `INVALID_CURRENT_PASSWORD` | 204 |
 | GET | `/api/v1/users/me` | 当前用户 | 200 |
+| PUT | `/api/v1/users/me/language` | 设置当前账号的界面语言：请求 `{"language": "zh" \| "en"}`，返回当前用户（含 `language`）；需登录、Origin 与 CSRF。注册时也可传 `language`（默认 `zh`） | 200 |
 | GET | `/api/v1/email-connections` | 当前用户的邮箱连接 | 200 |
 | GET | `/api/v1/email-connections/{connection_id}` | 连接状态和公开信息 | 200 |
 | DELETE | `/api/v1/email-connections/{connection_id}` | 解绑并停止后续访问 | 204 |
@@ -175,6 +177,7 @@ async def list_email_connections(
 - 字段校验错误可增加 `details`，仅包含安全的字段名、原因和规则，不回显密码等输入值。
 - FastAPI 的请求校验错误、HTTP 异常和未处理异常都须转换为上述结构；未处理异常记录内部日志并返回通用信息。
 - 响应通过 `X-Request-ID` 暴露请求标识；错误体中使用同一值。外部传入标识须校验格式与长度，或由服务端生成。
+- 界面语言（2026-11-15）：前端每个请求带 `X-HKM-Language: zh | en`（实时字幕 WebSocket 用查询参数 `lang=en`）。后端代码里的 `message` 写中文，由 `app/i18n.py` 的 `tr()` 在返回时按该请求头翻译成英文，缺译文时保持中文；新增面向用户的文案时同步在 `app/i18n.py` 的 `EN` 中加英文。后台任务（如自动邮件摘要）没有请求头，读取 `users.language`。
 
 | 状态 | 适用情况 |
 |---|---|
