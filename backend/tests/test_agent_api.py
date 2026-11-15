@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import UTC, date, datetime
 
 import pytest
@@ -630,3 +631,72 @@ def test_hku_places_need_login_and_come_from_official_sources(agent):
     assert colour == {"32", "30", "L3-5", "L3-6", "L3-1"}
     scan = {p["number"] for f in floors for p in f["printers"] if p["scan"]}
     assert scan == {"23", "33", "30", "5", "24", "20"}
+
+
+def test_english_guides_mirror_the_verified_chinese_ones():
+    """Each translation keeps the original's topic, category, check date, sources and
+    section count, so English pages never drift from what was verified."""
+    import json
+
+    from app.agent.tools import GUIDE, KNOWLEDGE_DIR, frontmatter
+
+    for original in sorted(KNOWLEDGE_DIR.glob("*.md")):
+        english = KNOWLEDGE_DIR / "en" / original.name
+        assert english.is_file(), original.name
+        zh_fields, zh_sources, zh_body = frontmatter(original.read_text(encoding="utf-8"))
+        en_fields, en_sources, en_body = frontmatter(english.read_text(encoding="utf-8"))
+        for key in ("topic", "category", "verified", "layout"):
+            assert zh_fields.get(key) == en_fields.get(key), (original.name, key)
+        assert [url for _, url in zh_sources] == [url for _, url in en_sources], original.name
+        assert zh_body.count("\n## ") == en_body.count("\n## "), original.name
+        assert not re.search(r"[一-鿿]", english.read_text(encoding="utf-8")), english.name
+    zh_places = json.loads((KNOWLEDGE_DIR / "hku-places.json").read_text(encoding="utf-8"))
+    en_places = json.loads((KNOWLEDGE_DIR / "en" / "hku-places.json").read_text(encoding="utf-8"))
+
+    def shape(value):
+        """Everything except the wording: floors, kinds, wings and printers."""
+        if isinstance(value, dict):
+            return {
+                k: shape(v)
+                for k, v in value.items()
+                if k not in ("text", "intro", "label", "name") or not isinstance(v, str)
+            }
+        if isinstance(value, list):
+            return [shape(v) for v in value]
+        return value
+
+    assert shape(zh_places) == shape(en_places)
+    english_guide = GUIDE.parent / "en" / GUIDE.name
+    zh_sections = GUIDE.read_text(encoding="utf-8").count("\n## ")
+    assert english_guide.read_text(encoding="utf-8").count("\n## ") == zh_sections
+
+
+def test_hku_guide_in_english(agent):
+    register(agent)
+    login(agent)
+    guide = agent.get("/api/v1/guides/hku", headers={"X-HKM-Language": "en"}).json()
+    assert guide["audience"] == "Postgraduates"
+    assert [c["title"] for c in guide["categories"]] == [
+        "Library",
+        "Transport & campus",
+        "Student services & contacts",
+    ]
+    [library] = guide["categories"][0]["documents"]
+    rules = next(
+        s for s in library["sections"] if s["heading"] == "Borrowing rules for postgraduates"
+    )
+    assert "180-day loans" in rules["text"]
+    places = agent.get("/api/v1/guides/hku/places", headers={"X-HKM-Language": "en"}).json()
+    assert places["sources"][0]["label"].startswith("HKU Libraries:")
+
+
+def test_assistant_reads_english_guides_for_english_accounts():
+    from app.agent.tools import HelpQuery, KnowledgeQuery, app_help, knowledge_search
+
+    result = knowledge_search(
+        KnowledgeQuery(query="how many books can postgraduates borrow", topic="hku"),
+        {"language": "en"},
+    )
+    assert result.card["guides"] == ["Libraries (postgraduates)"]
+    help_result = app_help(HelpQuery(question="how do I switch language"), {"language": "en"})
+    assert any("English" in s["text"] for s in help_result.for_model["sections"])

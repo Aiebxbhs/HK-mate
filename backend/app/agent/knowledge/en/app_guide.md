@@ -1,0 +1,46 @@
+---
+title: HK Mate user guide
+updated: 2026-11-15
+---
+
+## Navigation and pages
+There are five places: Today, Schedule, Mail, Lectures and HKU guide. On a computer they are at the top of the page; on a phone, at the bottom. Each place has sub-pages you switch between under the page title: Schedule has "Schedule" and "Timetable"; Mail has "Inbox", "Draft an email" and "Mailboxes"; Lectures has "Live translation" and "Lecture records"; HKU guide has "Library", "Transport & campus" and "Student services & contacts". The browser's back and forward buttons work, and a refresh keeps you on the same page.
+
+## My account, language and password
+Click your avatar in the top-right corner to open the menu with "My account" and "Sign out". On "My account" you can switch the language between 中文 and English: the interface, the AI assistant's replies and summaries written from then on use that language, and the setting is saved to your account. Lecture translation always stays English to Chinese. You can also change your password there: enter the current password and a new one (12–128 characters, different from the current one). After a change, your account is signed out on other devices; this device stays signed in. HK Mate doesn't collect an email address at sign-up, so a forgotten password can't be recovered yet. The sign-in page also has a 中文 / English switch.
+
+## Today (home)
+The home page shows a greeting and the date in Hong Kong time, the AI assistant input, and "Next 5 days": classes, your own events and deadlines, day by day. A class in progress is marked "Now", today's next class shows "in x min", and deadlines due within 24 hours have an orange dot. If nothing is scheduled yet, you can click "Import timetable" or "Add event".
+
+## Connecting Gmail
+Go to Mail → Mailboxes → Add Google mailbox and authorize on the Google page. You can connect up to 5 mailboxes. HK Mate asks only for Gmail read-only access: it can read mail but can't send, delete or move mail, or change the read status. You can reauthorize or unlink a mailbox in Mailboxes. You can set your school mailbox to forward automatically to a connected Gmail so school mail appears in HK Mate too.
+
+## Inbox
+Mail → Inbox. Three columns: the mail list on the left, the email in the middle, and the AI assistant on the right. You can show the inbox only or all received mail including archived mail, refresh, and load more. Attachments show their file names only and are never downloaded. The number next to "Mail" in the navigation is how many new emails you haven't dealt with.
+
+## New mail, summaries and categories
+HK Mate checks Gmail about every 15 seconds in the background. New emails appear at the top of the Inbox with a summary and category made by the local model; you can view the email, dismiss it, retry a failed summary, draft a reply, or add it to your schedule (this opens an empty event form that you fill in yourself). Dismissing doesn't change anything in Gmail. There are five categories: School, Jobs, Bills & accounts, Promotions and Other, judged by the local model from the email's content. Each email in the Inbox shows its category, or "Sorting…" while the model is still working. Mail from the last 10 days is also sorted in the background. You can open any email and click "Summarize" on the right for a summary that isn't saved. Summaries are written in your account's language.
+
+## Replying and drafting new emails
+Reply: open an email in the Inbox and, on the right, choose how to reply (Accept, Decline, Ask for details, Set a time, Thanks / received, or My own points), the tone, the language and how to sign; HK Mate then writes an editable draft. You can also click "Draft reply" on a new-mail notice. New email: Mail → Draft an email, write what you want to say, and get a subject and body. Copy the draft, or click "Open in Gmail" to check it and send it yourself in Gmail. Gaps you need to fill are marked like [To fill in: …]. HK Mate itself never sends email.
+
+## My schedule
+Schedule → Schedule lists HKU classes and your own events for the next 100 days, grouped by date. "Add event" lets you choose an Event (start and end time on the same day, Hong Kong time) or a Deadline (a due time only, with a countdown bar that starts filling 14 days before, turns orange within 3 days and red when overdue). You can edit events you added with "Edit"; HKU classes can't be edited. Every item can be marked done or undone, and deleted (with confirmation).
+
+## HKU timetable
+Schedule → Timetable shows HKU classes only, laid out like the HKU Portal timetable: the whole term as one scrolling calendar, a week per row, opening at the current week; each course has its own colour and exams are marked. The first time, follow the illustrated steps on the page to turn on the Event Calendar subscription in HKU Portal, copy the subscription link (an hku.hk link starting with https:// or webcal://), and paste it into the box to import. The link is used for that one download and isn't saved. The timetable is a one-time snapshot and doesn't follow later changes from HKU; import again when needed. HKU classes you deleted come back when you import again.
+
+## Live lecture translation
+Lectures → Live translation. Click "Start lecture" to start the timer, then "Start recording": the lecturer's English is recognized and translated into Chinese live, shown as bilingual captions, with the sentence being spoken appearing first in grey English. You can pause and resume recording at any time, and take time-stamped notes on the right and mark them as key. Open HK Mate in Chrome or Safari (some built-in app browsers block the microphone). Audio is processed only on this computer and is never uploaded or saved. Get permission from the lecturer and the university before recording.
+
+## After-class summaries and lecture records
+Click "End lecture" and confirm to reach the save page, where the local AI writes a lecture summary (an overview, key points, and reminders about assignments and exams, each with its time in the lecture and the lecturer's own words). Enter the course name and choose whether to save the AI summary, your notes and the transcript (the transcript isn't saved by default), or discard everything. Lectures → Lecture records lets you browse by course, edit, delete and export to Markdown. Summaries are written in your account's language.
+
+## HKU guide
+The HKU guide gathers information for HKU postgraduates in three parts: Library (the libraries, borrowing, booking study spaces, printing, and a floor-by-floor view of the Main Library that can be filtered by colour printing, scanning, study space and more), Transport & campus (the official campus map, MTR exits, bus and minibus routes, and the shuttle bus) and Student services & contacts (transcripts and testimonials, fees, health and counselling, housing and careers, emergencies). Content comes only from official HKU websites and shows the date it was checked; details that change often, such as opening hours and timetables, are given as official links.
+
+## The AI assistant on Today
+Type into the input on the home page. It can: look up your schedule and deadlines (for example "What classes do I have tomorrow?" or "Any deadlines this week?"); propose a new event (saved only after you click "Add it"); draft an email (for example "I need to miss tomorrow's class, write a leave email to Prof. Chan"; the local model writes the draft, you fill in the recipient's address in the draft card, and HK Mate never sends it); look through your saved lecture records; answer newcomer questions (Hong Kong ID card, student visa extension, opening a bank account, Octopus and MTR student fares, SIM card registration, avoiding scams); suggest beginner hikes and shopping spots; answer from the HKU guide (based on official sources, with links); check Hong Kong weather and warnings; and answer questions about using HK Mate. You can also chat about food like with a friend: say "Find good food in Sai Ying Pun" and it asks what you feel like, then recommends two or three places from Google Maps with ratings, opening status and map links. Chats are sent to the configured cloud AI service. Chat history is encrypted on this computer and only the latest 20 chats are kept: click "History" to continue or delete an earlier chat, or "New chat" to start over. The assistant remembers lasting preferences you mention (such as "I don't eat spicy food" or "I live in Sai Ying Pun") and shows "Remembered", which you can undo; click "Memory" to see, delete or clear everything it remembers. These memories are sent to the cloud AI service with your chats. With English selected, the assistant replies in English.
+
+## Privacy and data
+Accounts, mailbox connections, schedules and lecture records are stored on the computer running HK Mate and kept separate per account. Mailbox access tokens are encrypted. Mail summaries, categories, reply drafts, lecture translation and lecture summaries all run on local models. The AI assistant on the home page uses a cloud model, so your chats and the preferences it remembers are sent to the cloud provider; chat history and memories are encrypted on this computer and can be deleted at any time.
