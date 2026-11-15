@@ -1,3 +1,4 @@
+import { tr } from '../i18n'
 /** The HK Mate wordmark: a serif name whose full stop is a small warm orb. */
 export function Wordmark() {
   return (
@@ -10,7 +11,7 @@ export function Wordmark() {
 
 export default function Brand() {
   return (
-    <a className="brand" href="/" aria-label="HK Mate 首页">
+    <a className="brand" href="/" aria-label={tr('HK Mate 首页', 'HK Mate home')}>
       <Wordmark />
     </a>
   )

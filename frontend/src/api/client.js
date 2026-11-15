@@ -1,3 +1,12 @@
+import { getLanguage, tr } from '../i18n'
+
+function networkMessage() {
+  return tr(
+    '暂时无法连接服务，请检查网络后重试。',
+    "Can't reach the service. Check your network and try again.",
+  )
+}
+
 export class ApiError extends Error {
   constructor(message, status, code, requestId) {
     super(message)
@@ -10,14 +19,19 @@ export class ApiError extends Error {
 async function request(path, options = {}) {
   let response
   try {
-    response = await fetch(`/api/v1${path}`, { credentials: 'same-origin', ...options })
+    response = await fetch(`/api/v1${path}`, {
+      credentials: 'same-origin',
+      ...options,
+      headers: { ...options.headers, 'X-HKM-Language': getLanguage() },
+    })
   } catch {
-    throw new ApiError('暂时无法连接服务，请检查网络后重试。', 0, 'NETWORK_ERROR')
+    throw new ApiError(networkMessage(), 0, 'NETWORK_ERROR')
   }
   const data = response.status === 204 ? null : await response.json().catch(() => null)
   if (!response.ok) {
     throw new ApiError(
-      data?.error?.message || '服务暂时不可用，请稍后重试。',
+      data?.error?.message ||
+        tr('服务暂时不可用，请稍后重试。', 'The service is unavailable. Please try again later.'),
       response.status,
       data?.error?.code,
       data?.error?.request_id,
@@ -74,7 +88,11 @@ async function agentChat({ message, conversationId, signature }, onEvent, signal
     response = await fetch('/api/v1/agent/chat', {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf_token },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf_token,
+        'X-HKM-Language': getLanguage(),
+      },
       // The signature is used only by the local drafting model, never sent to the cloud.
       body: JSON.stringify({
         message,
@@ -85,12 +103,16 @@ async function agentChat({ message, conversationId, signature }, onEvent, signal
     })
   } catch (cause) {
     if (cause?.name === 'AbortError') throw cause
-    throw new ApiError('暂时无法连接服务，请检查网络后重试。', 0, 'NETWORK_ERROR')
+    throw new ApiError(networkMessage(), 0, 'NETWORK_ERROR')
   }
   if (!response.ok) {
     const data = await response.json().catch(() => null)
     throw new ApiError(
-      data?.error?.message || 'AI 助手暂时不可用，请稍后重试。',
+      data?.error?.message ||
+        tr(
+          'AI 助手暂时不可用，请稍后重试。',
+          'The AI assistant is unavailable. Please try again later.',
+        ),
       response.status,
       data?.error?.code,
     )
@@ -166,4 +188,5 @@ export const api = {
   register: (data) => mutate('/auth/register', data),
   logout: () => mutate('/auth/logout'),
   changePassword: (data) => mutate('/auth/password', data),
+  setLanguage: (language) => mutate('/users/me/language', { language }, 'PUT'),
 }

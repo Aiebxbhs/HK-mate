@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api/client'
 import Icon from './Icon'
+import { tr } from '../i18n'
 
 const empty = { current: '', next: '', confirmation: '' }
 
@@ -21,18 +22,25 @@ export default function PasswordChange({ username }) {
     setError('')
     setNotice('')
     if (values.next !== values.confirmation) {
-      setError('两次输入的新密码不一致。')
+      setError(tr('两次输入的新密码不一致。', "The new passwords don't match."))
       return
     }
     if (values.next === values.current) {
-      setError('新密码不能与当前密码相同。')
+      setError(
+        tr('新密码不能与当前密码相同。', 'The new password must differ from the current one.'),
+      )
       return
     }
     setBusy(true)
     try {
       await api.changePassword({ current_password: values.current, new_password: values.next })
       setValues(empty)
-      setNotice('密码已更新，其他设备上的登录已退出。')
+      setNotice(
+        tr(
+          '密码已更新，其他设备上的登录已退出。',
+          'Password updated. Other devices have been signed out.',
+        ),
+      )
     } catch (cause) {
       setError(cause.message)
     } finally {
@@ -44,7 +52,7 @@ export default function PasswordChange({ username }) {
   return (
     <section className="account-section" aria-labelledby="password-title">
       <div className="section-title">
-        <h2 id="password-title">修改密码</h2>
+        <h2 id="password-title">{tr('修改密码', 'Change password')}</h2>
       </div>
       <form className="account-card password-form" onSubmit={submit}>
         <fieldset disabled={busy}>
@@ -58,7 +66,7 @@ export default function PasswordChange({ username }) {
             readOnly
           />
           <label htmlFor="current-password">
-            当前密码
+            {tr('当前密码', 'Current password')}
             <span className="password-wrap">
               <input
                 id="current-password"
@@ -74,7 +82,9 @@ export default function PasswordChange({ username }) {
                 className="eye-button"
                 type="button"
                 onClick={() => setVisible((v) => !v)}
-                aria-label={visible ? '隐藏密码' : '显示密码'}
+                aria-label={
+                  visible ? tr('隐藏密码', 'Hide password') : tr('显示密码', 'Show password')
+                }
                 aria-pressed={visible}
               >
                 <Icon name="eye" />
@@ -82,7 +92,7 @@ export default function PasswordChange({ username }) {
             </span>
           </label>
           <label htmlFor="new-password">
-            新密码
+            {tr('新密码', 'New password')}
             <input
               id="new-password"
               name="new-password"
@@ -97,10 +107,13 @@ export default function PasswordChange({ username }) {
             />
           </label>
           <p id="new-password-help" className="field-help">
-            使用 12–128 个字符。修改后，其他设备需要用新密码重新登录。
+            {tr(
+              '使用 12–128 个字符。修改后，其他设备需要用新密码重新登录。',
+              'Use 12–128 characters. Other devices will need to sign in again with the new password.',
+            )}
           </p>
           <label htmlFor="new-password-confirmation">
-            确认新密码
+            {tr('确认新密码', 'Confirm new password')}
             <input
               id="new-password-confirmation"
               name="new-password-confirmation"
@@ -127,11 +140,11 @@ export default function PasswordChange({ username }) {
           <button className="primary-button" type="submit">
             {busy ? (
               <>
-                <span className="spinner" /> 正在更新…
+                <span className="spinner" /> {tr('正在更新…', 'Updating…')}
               </>
             ) : (
               <>
-                更新密码
+                {tr('更新密码', 'Update password')}
                 <Icon name="lock" />
               </>
             )}

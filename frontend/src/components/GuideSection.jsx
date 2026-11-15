@@ -1,16 +1,18 @@
-// One guide section. Its text has one line per paragraph or per fact ("- 标签：内容"),
+// One guide section. Its text has one line per paragraph or per fact ("- 标签：内容", or
+// "- Label: value" in the English guides),
 // so short facts can be shown as labelled rows instead of one long paragraph.
-const ROUTE_LIST = /^[0-9A-Z]{1,5}(、[0-9A-Z]{1,5})*$/
+const ROUTE_LIST = /^[0-9A-Z]{1,5}((、|, ?)[0-9A-Z]{1,5})*$/
 
 export function parseSection(text) {
   const blocks = []
   for (const line of text.split('\n')) {
     if (line.startsWith('- ')) {
       const item = line.slice(2)
-      const cut = item.indexOf('：')
+      const wide = item.indexOf('：')
+      const cut = wide > 0 ? wide : item.indexOf(': ')
       const fact =
         cut > 0
-          ? { label: item.slice(0, cut), value: item.slice(cut + 1) }
+          ? { label: item.slice(0, cut), value: item.slice(cut + (wide > 0 ? 1 : 2)).trim() }
           : { label: '', value: item }
       const last = blocks[blocks.length - 1]
       if (last?.type === 'facts') last.facts.push(fact)

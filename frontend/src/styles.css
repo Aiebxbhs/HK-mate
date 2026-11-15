@@ -683,6 +683,64 @@ input::placeholder {
   font-size: 13px;
   overflow-wrap: anywhere;
 }
+/* Language: switch on the sign-in page, setting on the account page. */
+.language-switch {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+  border-radius: 999px;
+  padding: 5px 13px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.language-switch:hover {
+  background: var(--surface-2);
+}
+.auth-language {
+  display: block;
+  margin: 0 0 14px auto;
+}
+.language-setting {
+  flex-wrap: wrap;
+}
+.language-setting > div:first-child {
+  flex: 1 1 260px;
+}
+.language-setting h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+.language-setting .message {
+  flex-basis: 100%;
+  margin: 0;
+}
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.segmented button {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 6px 15px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.segmented button.active {
+  background: var(--primary);
+  color: var(--accent-ink);
+}
+.segmented button:disabled {
+  cursor: default;
+}
 .account-date {
   margin-left: auto;
   flex-shrink: 0;

@@ -1,3 +1,4 @@
+import { tr } from '../i18n'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api/client'
 import { SCHEDULE_CHANGED } from './schedule-draft'
@@ -15,7 +16,12 @@ export function useCalendarEvents(startDate, endDate) {
         if (active) setResult({ data, loading: false, error: '' })
       } catch (cause) {
         if (active)
-          setResult({ data: null, loading: false, error: cause.message || '课表暂时无法加载。' })
+          setResult({
+            data: null,
+            loading: false,
+            error:
+              cause.message || tr('课表暂时无法加载。', "The schedule can't be loaded right now."),
+          })
       }
     }
     void load()

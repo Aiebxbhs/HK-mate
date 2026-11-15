@@ -4,6 +4,7 @@ import DeadlineBar from './DeadlineBar'
 import Icon from './Icon'
 import { SCHEDULE_CHANGED } from './schedule-draft'
 import { eventTime } from './use-calendar-events'
+import { locale, tr } from '../i18n'
 
 const hkParts = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Asia/Hong_Kong',
@@ -11,10 +12,13 @@ const hkParts = new Intl.DateTimeFormat('en-GB', {
   month: '2-digit',
   day: '2-digit',
 })
-export const hkWeekday = new Intl.DateTimeFormat('zh-CN', {
-  timeZone: 'Asia/Hong_Kong',
-  weekday: 'short',
-})
+// Formats in the current interface language each time.
+export const hkWeekday = {
+  format: (value) =>
+    new Intl.DateTimeFormat(locale(), { timeZone: 'Asia/Hong_Kong', weekday: 'short' }).format(
+      value,
+    ),
+}
 
 export function hkDay(value) {
   const parts = Object.fromEntries(
@@ -24,10 +28,11 @@ export function hkDay(value) {
 }
 
 export function durationLabel(minutes) {
-  if (minutes < 60) return `${minutes} 分钟`
+  if (minutes < 60) return tr(`${minutes} 分钟`, `${minutes} min`)
   const hours = Math.floor(minutes / 60)
   const rest = minutes % 60
-  return rest ? `${hours} 小时 ${rest} 分钟` : `${hours} 小时`
+  if (rest) return tr(`${hours} 小时 ${rest} 分钟`, `${hours} h ${rest} min`)
+  return tr(`${hours} 小时`, `${hours} h`)
 }
 
 export function sortEvents(events) {
@@ -83,21 +88,27 @@ export function AgendaItem({ event, now, isNext, children }) {
   return (
     <li className={`agenda-item today-item${state ? ` is-${state}` : ''}`}>
       <div className="agenda-time">
-        {deadline && <span className="agenda-time-kind">截止</span>}
+        {deadline && <span className="agenda-time-kind">{tr('截止', 'Due')}</span>}
         <strong>{eventTime(event.starts_at)}</strong>
-        {!deadline && <span>至 {eventTime(event.ends_at)}</span>}
+        {!deadline && (
+          <span>{tr(`至 ${eventTime(event.ends_at)}`, `to ${eventTime(event.ends_at)}`)}</span>
+        )}
       </div>
       <div className="agenda-body">
-        {state === 'done' && <span className="agenda-status">已完成</span>}
-        {state === 'ended' && <span className="agenda-status">已结束</span>}
+        {state === 'done' && <span className="agenda-status">{tr('已完成', 'Done')}</span>}
+        {state === 'ended' && <span className="agenda-status">{tr('已结束', 'Ended')}</span>}
         {state === 'ongoing' && (
           <span className="agenda-status">
-            进行中，还剩 {durationLabel(Math.ceil((end - nowMs) / 60000))}
+            {tr('进行中，还剩 ', 'In progress, ')}
+            {durationLabel(Math.ceil((end - nowMs) / 60000))}
+            {tr('', ' left')}
           </span>
         )}
         {state === 'next' && (
           <span className="agenda-status">
-            {durationLabel(Math.ceil((start - nowMs) / 60000))}后开始
+            {tr('', 'Starts in ')}
+            {durationLabel(Math.ceil((start - nowMs) / 60000))}
+            {tr('后开始', '')}
           </span>
         )}
         <CourseTitle event={event} />
@@ -128,10 +139,14 @@ export function CompleteButton({ event, onError }) {
       className={`agenda-complete${event.completed ? ' is-done' : ''}`}
       onClick={toggle}
       disabled={busy}
-      aria-label={event.completed ? `撤销完成 ${event.title}` : `完成 ${event.title}`}
+      aria-label={
+        event.completed
+          ? tr(`撤销完成 ${event.title}`, `Mark ${event.title} not done`)
+          : tr(`完成 ${event.title}`, `Mark ${event.title} done`)
+      }
     >
       <Icon name={event.completed ? 'refresh' : 'check'} size={14} aria-hidden="true" />
-      {event.completed ? '撤销完成' : '完成'}
+      {event.completed ? tr('撤销完成', 'Undo') : tr('完成', 'Done')}
     </button>
   )
 }

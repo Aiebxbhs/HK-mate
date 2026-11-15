@@ -12,14 +12,17 @@ import {
 } from '../components/Agenda'
 import { shiftDate, useCalendarEvents } from '../components/use-calendar-events'
 import Skeleton from '../components/Skeleton'
+import { tr } from '../i18n'
 
 const RANGE_DAYS = 100
 
 function dayHeading(iso, today) {
   const weekday = hkWeekday.format(new Date(`${iso}T12:00:00+08:00`))
-  const label = `${Number(iso.slice(5, 7))} 月 ${Number(iso.slice(8))} 日 ${weekday}`
-  if (iso === today) return `今天 ${label}`
-  if (iso === shiftDate(today, 1)) return `明天 ${label}`
+  const month = Number(iso.slice(5, 7))
+  const day = Number(iso.slice(8))
+  const label = tr(`${month} 月 ${day} 日 ${weekday}`, `${weekday} ${day}/${month}`)
+  if (iso === today) return tr(`今天 ${label}`, `Today, ${label}`)
+  if (iso === shiftDate(today, 1)) return tr(`明天 ${label}`, `Tomorrow, ${label}`)
   return label
 }
 
@@ -43,40 +46,51 @@ function DeleteControl({ event, onDeleted, onEdit }) {
   return (
     <div className="schedule-row-meta">
       {/* Only timetable classes are marked: they cannot be edited, only deleted. */}
-      {event.source !== 'manual' && <span className="schedule-source">HKU 课表</span>}
+      {event.source !== 'manual' && (
+        <span className="schedule-source">{tr('HKU 课表', 'HKU timetable')}</span>
+      )}
       {!confirming && <CompleteButton event={event} onError={setError} />}
       {!confirming && event.source === 'manual' && (
         <button
           type="button"
           className="schedule-edit"
-          aria-label={`编辑 ${event.title}`}
+          aria-label={tr(`编辑 ${event.title}`, `Edit ${event.title}`)}
           onClick={onEdit}
         >
           <Icon name="pen" size={14} aria-hidden="true" />
-          编辑
+          {tr('编辑', 'Edit')}
         </button>
       )}
       {confirming ? (
-        <span className="schedule-confirm" role="group" aria-label={`确认删除 ${event.title}`}>
+        <span
+          className="schedule-confirm"
+          role="group"
+          aria-label={tr(`确认删除 ${event.title}`, `Confirm deleting ${event.title}`)}
+        >
           <span>
-            {event.source === 'manual' ? '删除这项日程？' : '删除这节课？重新导入课表后会恢复。'}
+            {event.source === 'manual'
+              ? tr('删除这项日程？', 'Delete this event?')
+              : tr(
+                  '删除这节课？重新导入课表后会恢复。',
+                  'Delete this class? It comes back if you import the timetable again.',
+                )}
           </span>
           <button type="button" className="danger-text" onClick={remove} disabled={busy}>
-            {busy ? '正在删除…' : '删除'}
+            {busy ? tr('正在删除…', 'Deleting…') : tr('删除', 'Delete')}
           </button>
           <button type="button" onClick={() => setConfirming(false)} disabled={busy}>
-            取消
+            {tr('取消', 'Cancel')}
           </button>
         </span>
       ) : (
         <button
           type="button"
           className="schedule-delete"
-          aria-label={`删除 ${event.title}`}
+          aria-label={tr(`删除 ${event.title}`, `Delete ${event.title}`)}
           onClick={() => setConfirming(true)}
         >
           <Icon name="trash" size={15} aria-hidden="true" />
-          删除
+          {tr('删除', 'Delete')}
         </button>
       )}
       {error && (
@@ -113,11 +127,12 @@ export default function Calendar({ startAdding = false }) {
   )
 
   return (
-    <section className="schedule-page" aria-label="日程列表">
+    <section className="schedule-page" aria-label={tr('日程列表', 'Schedule')}>
       <div className="schedule-toolbar">
         <p>
-          接下来 {RANGE_DAYS} 天{data && `，共 ${events.length} 项`}
-          <span className="schedule-timezone">香港时间</span>
+          {tr(`接下来 ${RANGE_DAYS} 天`, `Next ${RANGE_DAYS} days`)}
+          {data && tr(`，共 ${events.length} 项`, ` · ${events.length} items`)}
+          <span className="schedule-timezone">{tr('香港时间', 'Hong Kong time')}</span>
         </p>
         {!adding && (
           <button
@@ -130,7 +145,7 @@ export default function Calendar({ startAdding = false }) {
             }}
           >
             <Icon name="plus" size={16} aria-hidden="true" />
-            添加日程
+            {tr('添加日程', 'Add event')}
           </button>
         )}
       </div>
@@ -139,7 +154,7 @@ export default function Calendar({ startAdding = false }) {
           onCancel={() => setAdding(false)}
           onSaved={() => {
             setAdding(false)
-            setNotice('日程已添加。')
+            setNotice(tr('日程已添加。', 'Event added.'))
           }}
         />
       )}
@@ -149,7 +164,7 @@ export default function Calendar({ startAdding = false }) {
         </p>
       )}
       {loading ? (
-        <Skeleton label="正在读取日程…" rows={4} />
+        <Skeleton label={tr('正在读取日程…', 'Loading schedule…')} rows={4} />
       ) : error ? (
         <p className="message error" role="alert">
           {error}
@@ -163,7 +178,7 @@ export default function Calendar({ startAdding = false }) {
           >
             <h2 className="schedule-day-heading">
               <time dateTime={group.day}>{dayHeading(group.day, today)}</time>
-              <span>{group.events.length} 项</span>
+              <span>{tr(`${group.events.length} 项`, `${group.events.length} items`)}</span>
             </h2>
             <ol className="agenda-list">
               {group.events.map((event) =>
@@ -175,7 +190,7 @@ export default function Calendar({ startAdding = false }) {
                       onCancel={() => setEditingId('')}
                       onSaved={() => {
                         setEditingId('')
-                        setNotice('日程已修改。')
+                        setNotice(tr('日程已修改。', 'Event updated.'))
                       }}
                     />
                   </li>
@@ -194,7 +209,7 @@ export default function Calendar({ startAdding = false }) {
                         setEditingId(event.id)
                       }}
                       onDeleted={() => {
-                        setNotice('日程已删除。')
+                        setNotice(tr('日程已删除。', 'Event deleted.'))
                         reload()
                       }}
                     />
@@ -207,7 +222,12 @@ export default function Calendar({ startAdding = false }) {
       ) : (
         <div className="agenda-card agenda-empty">
           <Icon name="calendar" size={22} aria-hidden="true" />
-          <p>接下来 {RANGE_DAYS} 天还没有日程，点击“添加日程”创建一项。</p>
+          <p>
+            {tr(
+              `接下来 ${RANGE_DAYS} 天还没有日程，点击“添加日程”创建一项。`,
+              `Nothing in the next ${RANGE_DAYS} days. Click “Add event” to create one.`,
+            )}
+          </p>
         </div>
       )}
     </section>

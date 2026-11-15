@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { tr } from '../i18n'
 
 // Isometric (2.5D) stack of Main Library floors, drawn as plain SVG: no 3D library needed.
 const COS = Math.cos(Math.PI / 6)
@@ -44,43 +45,63 @@ function box(x0, x1, z) {
 export const FILTERS = [
   {
     id: 'colour',
-    label: '彩色打印',
+    get label() {
+      return tr('彩色打印', 'Colour printing')
+    },
     match: (floor) =>
       floor.printers.filter((p) => p.print_mode === 'colour' || p.copy_mode === 'colour'),
   },
   {
     id: 'scan',
-    label: '扫描',
+    get label() {
+      return tr('扫描', 'Scanning')
+    },
     match: (floor) => [
       ...floor.printers.filter((p) => p.scan),
-      ...floor.spots.filter((s) => s.text.includes('扫描')),
+      ...floor.spots.filter((s) => s.text.includes('扫描') || /\bscan/i.test(s.text)),
     ],
   },
   {
     id: 'study',
-    label: '自习空间',
+    get label() {
+      return tr('自习空间', 'Study space')
+    },
     match: (floor) => floor.spots.filter((s) => s.kind === 'study'),
   },
   {
     id: 'service',
-    label: '服务台',
+    get label() {
+      return tr('服务台', 'Service desks')
+    },
     match: (floor) => floor.spots.filter((s) => s.kind === 'service'),
   },
   {
     id: 'tech',
-    label: '电脑与设备',
+    get label() {
+      return tr('电脑与设备', 'Computers & equipment')
+    },
     match: (floor) => floor.spots.filter((s) => s.kind === 'tech'),
   },
 ]
 
-const KIND_LABELS = { study: '自习', service: '服务', tech: '设备', collection: '馆藏' }
+const kindLabels = () => ({
+  study: tr('自习', 'Study'),
+  service: tr('服务', 'Service'),
+  tech: tr('设备', 'Equipment'),
+  collection: tr('馆藏', 'Collection'),
+})
 
 function printerFeatures(printer) {
-  const parts = [printer.print_mode === 'colour' ? '彩色打印' : '黑白打印']
-  if (printer.copy_mode) parts.push(printer.copy_mode === 'colour' ? '彩色复印' : '黑白复印')
-  if (printer.wifi) parts.push('Wi-Fi 打印')
-  if (printer.scan) parts.push('扫描到邮箱')
-  return parts.join('、')
+  const parts = [
+    printer.print_mode === 'colour' ? tr('彩色打印', 'colour print') : tr('黑白打印', 'B&W print'),
+  ]
+  if (printer.copy_mode)
+    parts.push(
+      printer.copy_mode === 'colour' ? tr('彩色复印', 'colour copy') : tr('黑白复印', 'B&W copy'),
+    )
+  if (printer.wifi) parts.push(tr('Wi-Fi 打印', 'Wi-Fi printing'))
+  if (printer.scan) parts.push(tr('扫描到邮箱', 'scan to email'))
+  return parts.join(tr('、', ', '))
 }
 
 /** Main Library floors from the verified official data (top floor first). */
@@ -109,13 +130,20 @@ export default function LibraryFloors({ library }) {
   const viewTop = ORIGIN.y - stackTop - SLAB - 16
 
   return (
-    <section className="library-floors" aria-label={`${library.name} 逐层设施`}>
+    <section
+      className="library-floors"
+      aria-label={tr(`${library.name} 逐层设施`, `${library.name} floor by floor`)}
+    >
       <header className="guide-visual-head">
-        <h2>{library.name} 逐层设施</h2>
+        <h2>{tr(`${library.name} 逐层设施`, `${library.name} floor by floor`)}</h2>
         <p>{library.intro}</p>
       </header>
 
-      <div className="library-filters" role="group" aria-label="按设施筛选楼层">
+      <div
+        className="library-filters"
+        role="group"
+        aria-label={tr('按设施筛选楼层', 'Filter floors by facility')}
+      >
         {FILTERS.map((item) => (
           <button
             key={item.id}
@@ -183,7 +211,11 @@ export default function LibraryFloors({ library }) {
               )
             })()}
           </svg>
-          <div className="library-floor-tabs" role="group" aria-label="选择楼层">
+          <div
+            className="library-floor-tabs"
+            role="group"
+            aria-label={tr('选择楼层', 'Choose a floor')}
+          >
             {floors.map((floor) => (
               <button
                 key={floor.id}
@@ -208,12 +240,17 @@ export default function LibraryFloors({ library }) {
             <span>{selected.wings.join('、')}</span>
           </h3>
           {filter && !selectedMatches.size && (
-            <p className="library-detail-note">这一层没有“{filter.label}”。</p>
+            <p className="library-detail-note">
+              {tr(
+                `这一层没有“${filter.label}”。`,
+                `No ${filter.label.toLowerCase()} on this floor.`,
+              )}
+            </p>
           )}
           <ul className="library-spots">
             {selected.spots.map((spot) => (
               <li key={spot.name} className={selectedMatches.has(spot) ? 'matched' : undefined}>
-                <span className={`spot-kind spot-${spot.kind}`}>{KIND_LABELS[spot.kind]}</span>
+                <span className={`spot-kind spot-${spot.kind}`}>{kindLabels()[spot.kind]}</span>
                 <div>
                   <strong>{spot.name}</strong>
                   {spot.wing && <small>{spot.wing}</small>}
@@ -224,7 +261,7 @@ export default function LibraryFloors({ library }) {
           </ul>
           {selected.printers.length > 0 && (
             <div className="library-printers">
-              <h4>uPrint 打印机 / 复印机</h4>
+              <h4>{tr('uPrint 打印机 / 复印机', 'uPrint printers / copiers')}</h4>
               <ul>
                 {selected.printers.map((printer) => (
                   <li
@@ -238,7 +275,10 @@ export default function LibraryFloors({ library }) {
                 ))}
               </ul>
               <p className="library-detail-note">
-                Wi-Fi 打印只支持连接名为“HKU”的网络；收费与充值方法见官网“Copy, Print, Scan”页面。
+                {tr(
+                  'Wi-Fi 打印只支持连接名为“HKU”的网络；收费与充值方法见官网“Copy, Print, Scan”页面。',
+                  'Wi-Fi printing works only on the network named “HKU”. For prices and top-ups, see the official “Copy, Print, Scan” page.',
+                )}
               </p>
             </div>
           )}

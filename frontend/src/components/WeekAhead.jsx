@@ -1,13 +1,14 @@
 import { durationLabel, hkDay, hkWeekday, sortEvents } from './Agenda'
 import Skeleton from './Skeleton'
+import { tr, useLanguage } from '../i18n'
 import { eventTime, shiftDate, useCalendarEvents } from './use-calendar-events'
 
 export const DAYS = 5
 const DAY_MS = 86_400_000
 
 function dayName(iso, today) {
-  if (iso === today) return '今天'
-  if (iso === shiftDate(today, 1)) return '明天'
+  if (iso === today) return tr('今天', 'Today')
+  if (iso === shiftDate(today, 1)) return tr('明天', 'Tomorrow')
   return hkWeekday.format(new Date(`${iso}T12:00:00+08:00`))
 }
 
@@ -17,8 +18,9 @@ function liveNote(event, now, isNext) {
   const start = new Date(event.starts_at).getTime()
   const end = new Date(event.ends_at).getTime()
   const nowMs = now.getTime()
-  if (start <= nowMs && nowMs < end) return '进行中'
-  if (isNext) return `${durationLabel(Math.ceil((start - nowMs) / 60000))}后`
+  if (start <= nowMs && nowMs < end) return tr('进行中', 'Now')
+  const wait = durationLabel(Math.ceil((start - nowMs) / 60000))
+  if (isNext) return tr(`${wait}后`, `in ${wait}`)
   return ''
 }
 
@@ -43,7 +45,9 @@ function Item({ event, now, isNext, isToday }) {
         {deadline && (
           <span className="week-meta">
             {' '}
-            {done ? '已完成' : `${eventTime(event.starts_at)} 截止`}
+            {done
+              ? tr('已完成', 'Done')
+              : tr(`${eventTime(event.starts_at)} 截止`, `due ${eventTime(event.starts_at)}`)}
           </span>
         )}
       </span>
@@ -55,6 +59,7 @@ function Item({ event, now, isNext, isToday }) {
 
 /** Home: the next five days of classes, own events and deadlines, one column per day. */
 export default function WeekAhead({ date, now, onNavigate, onAddSchedule }) {
+  const { t } = useLanguage()
   const { data, loading, error } = useCalendarEvents(date, shiftDate(date, DAYS))
   const days = Array.from({ length: DAYS }, (_, index) => shiftDate(date, index))
   const sorted = sortEvents(data?.items || [])
@@ -70,10 +75,10 @@ export default function WeekAhead({ date, now, onNavigate, onAddSchedule }) {
   return (
     <section className="week-ahead" aria-labelledby="week-ahead-title">
       <div className="week-ahead-head">
-        <h2 id="week-ahead-title">接下来 {DAYS} 天</h2>
+        <h2 id="week-ahead-title">{t(`接下来 ${DAYS} 天`, `Next ${DAYS} days`)}</h2>
         {onNavigate && (
           <button type="button" className="link-button" onClick={() => onNavigate('calendar')}>
-            全部日程
+            {t('全部日程', 'Full schedule')}
           </button>
         )}
       </div>
@@ -82,10 +87,15 @@ export default function WeekAhead({ date, now, onNavigate, onAddSchedule }) {
           {error}
         </p>
       ) : loading ? (
-        <Skeleton label="正在读取日程…" rows={2} />
+        <Skeleton label={t('正在读取日程…', 'Loading schedule…')} rows={2} />
       ) : !data?.total_events ? (
         <div className="week-empty">
-          <p>还没有日程。导入这学期的 HKU 课表，或者自己添加一项。</p>
+          <p>
+            {t(
+              '还没有日程。导入这学期的 HKU 课表，或者自己添加一项。',
+              'Nothing scheduled yet. Import this term’s HKU timetable or add an event yourself.',
+            )}
+          </p>
           <div>
             {onNavigate && (
               <button
@@ -93,12 +103,12 @@ export default function WeekAhead({ date, now, onNavigate, onAddSchedule }) {
                 className="secondary-button"
                 onClick={() => onNavigate('timetable')}
               >
-                导入课表
+                {t('导入课表', 'Import timetable')}
               </button>
             )}
             {onAddSchedule && (
               <button type="button" className="secondary-button" onClick={onAddSchedule}>
-                添加日程
+                {t('添加日程', 'Add event')}
               </button>
             )}
           </div>
@@ -109,11 +119,14 @@ export default function WeekAhead({ date, now, onNavigate, onAddSchedule }) {
             <li
               key={day}
               className={`week-day${day === date ? ' is-today' : ''}`}
-              aria-label={`${dayName(day, date)} ${Number(day.slice(8))} 日`}
+              aria-label={t(
+                `${dayName(day, date)} ${Number(day.slice(8))} 日`,
+                `${dayName(day, date)} ${Number(day.slice(8))}`,
+              )}
             >
               <h3>
                 {dayName(day, date)}
-                <span>{Number(day.slice(8))} 日</span>
+                <span>{t(`${Number(day.slice(8))} 日`, Number(day.slice(8)))}</span>
               </h3>
               {byDay[day].length ? (
                 <ul>
@@ -128,7 +141,7 @@ export default function WeekAhead({ date, now, onNavigate, onAddSchedule }) {
                   ))}
                 </ul>
               ) : (
-                <p className="week-none">没有安排</p>
+                <p className="week-none">{t('没有安排', 'Nothing planned')}</p>
               )}
             </li>
           ))}

@@ -281,6 +281,7 @@ describe('account pages', () => {
     expect(api.register).toHaveBeenCalledWith({
       username: account.username,
       password: 'example-password',
+      language: 'zh',
     })
     expect(screen.getByLabelText('账号')).toHaveValue(account.username)
     expect(screen.getByLabelText('密码', { exact: true })).toHaveValue('')
