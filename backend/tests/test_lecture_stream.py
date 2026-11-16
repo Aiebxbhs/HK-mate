@@ -149,12 +149,16 @@ def test_stream_captions_translates_and_keeps_context(live):
     assert [c["id"] for c in captions] == [1, 2]
     assert first.startswith("2.") and second.startswith("1.")
     assert captions[0]["offset"] == pytest.approx(0.8, abs=0.1)
-    assert [t["zh"] for t in translations] == [f"译文：{first}", f"译文：{second}"]
-    # The second sentence gets the first as recognition prompt and translation context.
+    assert [c["paragraph"] for c in captions] == [1, 1]
+    # Neither piece ends a sentence, so they are translated together once recording stops.
+    assert [(t["id"], t["upto"], t["zh"]) for t in translations] == [
+        (2, 2, f"译文：{first} {second}")
+    ]
+    # The second piece gets the first as recognition prompt.
     finals = [call for call in live.app.state.lecture_recognizer.calls if call[1] != first]
     assert (round(float(second[:3]), 1), first) in live.app.state.lecture_recognizer.calls
     assert finals[0][1] is None
-    assert live.app.state.lecture_translator.calls[1] == (second, [first])
+    assert live.app.state.lecture_translator.calls == [(f"{first} {second}", [])]
     # Interim lines only ever come before the final caption of their sentence.
     for index, message in enumerate(messages):
         if message["type"] == "partial" and message["en"]:
@@ -227,6 +231,99 @@ def test_an_empty_final_clears_the_interim_line():
     asyncio.run(scenario())
 
 
+def test_translation_follows_sentences_and_captions_form_paragraphs():
+    import asyncio
+
+    from app.lecture_stream import CaptionPipeline, Segment
+
+    texts = iter(
+        [
+            "So the gradient of the loss.",  # cut at the length limit, mid-sentence
+            "With respect to the weights is zero. Now let's",
+            "Next topic.",
+        ]
+    )
+
+    class Scripted(FakeRecognizer):
+        def transcribe(self, audio, prompt):
+            return next(texts)
+
+    def segment(offset, seconds, paused=True):
+        return Segment(offset, np.zeros(int(seconds * SAMPLE_RATE), dtype=np.float32), paused)
+
+    async def scenario():
+        socket, translator = FakeSocket(), FakeTranslator()
+        pipeline = CaptionPipeline(socket, Scripted(), translator)
+        tasks = pipeline.start()
+
+        async def settle():
+            for _ in range(20):
+                await asyncio.sleep(0.01)
+
+        pipeline.idle(5)  # silence before anyone has spoken asks for nothing
+        pipeline.final(segment(0, 5, paused=False))
+        await settle()
+        # The first piece is half a sentence: shown in English, not translated yet.
+        assert [m["type"] for m in socket.sent] == ["caption"]
+        assert socket.sent[0]["en"] == "So the gradient of the loss"
+
+        pipeline.final(segment(5, 3))
+        await settle()
+        # The sentence is whole now and translated in one piece; "Now let's" is held back.
+        first = "So the gradient of the loss With respect to the weights is zero."
+        assert translator.calls == [(first, [])]
+        assert socket.sent[-1]["id"] == 2 and socket.sent[-1]["upto"] == 1
+
+        pipeline.idle(0.5)  # a short pause is not enough
+        await settle()
+        assert len(translator.calls) == 1
+        pipeline.idle(1.3)
+        pipeline.idle(1.4)  # asked once per silence
+        await settle()
+        assert translator.calls[1] == ("Now let's", [(first, f"译文：{first}")])
+        assert socket.sent[-1]["id"] == 2 and socket.sent[-1]["upto"] == 2
+
+        # After a long silence a new paragraph starts; a finished sentence is translated at once.
+        pipeline.final(segment(14, 2))
+        await settle()
+        assert translator.calls[2] == (
+            "Next topic.",
+            [(first, f"译文：{first}"), ("Now let's", "译文：Now let's")],
+        )
+        pipeline.finish()
+        await asyncio.wait_for(asyncio.gather(*tasks), 2)
+        captions = [m for m in socket.sent if m["type"] == "caption"]
+        assert [c["paragraph"] for c in captions] == [1, 1, 2]
+        translations = [m for m in socket.sent if m["type"] == "translation"]
+        assert [(t["id"], t["upto"]) for t in translations] == [(2, 1), (2, 2), (3, 3)]
+
+    asyncio.run(scenario())
+
+
+def test_sentences_are_held_until_finished_but_not_for_too_long():
+    from app.lecture_stream import ready_length
+
+    text = "We go downhill, e.g. along the slope. Then we repeat. And after"
+    assert (
+        text[: ready_length(text, False)] == "We go downhill, e.g. along the slope. Then we repeat."
+    )
+    assert ready_length("and after that we", False) == 0
+    assert ready_length("and after that we", True) == len("and after that we")
+    # About ten seconds without a full stop: translated anyway.
+    rambling = " ".join(["word"] * 31)
+    assert ready_length(rambling, False) == len(rambling)
+
+
+def test_segmenter_reports_silence_and_forced_cuts():
+    segmenter = Segmenter()
+    segments = feed(segmenter, pcm(("silence", 0.5), ("speech", 8.0)))
+    assert [s.paused for s in segments] == [False]
+    assert segmenter.idle_seconds == 0  # still speaking
+    segments = feed(segmenter, pcm(("silence", 2.0)))
+    assert [s.paused for s in segments] == [True]
+    assert segmenter.idle_seconds == pytest.approx(2.0, abs=0.1)
+
+
 def expect_error(client, code, headers=ORIGIN):
     with client.websocket_connect("/api/v1/lecture/stream", headers=headers) as ws:
         messages = receive_until(ws, "error")
@@ -291,9 +388,14 @@ def test_translation_request_and_output_cleanup():
     seen = {}
     lock = threading.Lock()
     agent = translator(seen=seen, lock=lock)
-    assert agent.translate("Let's discuss Adam.", ["a", "b", "c"]) == "我们来讨论 Adam。"
+    earlier = [("a", "甲"), ("b", "乙"), ("c", "丙")]
+    assert agent.translate("Let's discuss Adam.", earlier) == "我们来讨论 Adam。"
     user = json.loads(seen["messages"][1]["content"])
-    assert user == {"previous": ["b", "c"], "sentence": "Let's discuss Adam."}
+    # The Chinese already shown goes along, so the model continues it instead of repeating it.
+    assert user == {
+        "previous": [{"en": "b", "zh": "乙"}, {"en": "c", "zh": "丙"}],
+        "sentence": "Let's discuss Adam.",
+    }
     assert seen["options"]["num_ctx"] == NUM_CTX and "tools" not in seen
     assert not lock.locked()
 

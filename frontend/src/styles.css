@@ -3480,6 +3480,11 @@ input::placeholder {
   line-height: 1.7;
   color: var(--warning);
 }
+/* What is being said right now, at the end of the current paragraph. */
+.lecture-caption-interim {
+  color: var(--muted);
+  font-style: italic;
+}
 .lecture-transcript summary {
   cursor: pointer;
   font-size: 15px;

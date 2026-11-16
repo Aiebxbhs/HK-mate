@@ -33,7 +33,7 @@ export function lectureMarkdown(record) {
     lines.push(tr('（无）', '(None)'))
   }
   if (record.transcript?.length) {
-    lines.push('', tr('## 逐句转写', '## Transcript'), '')
+    lines.push('', tr('## 转写与译文', '## Transcript'), '')
     for (const line of record.transcript) {
       lines.push(`- [${formatElapsed(line.at_seconds)}] ${line.en}`)
       if (line.zh) lines.push(`  ${line.zh}`)
@@ -279,8 +279,8 @@ function RecordDetail({ id, onBack, onDeleted }) {
             <details className="lecture-transcript">
               <summary>
                 {tr(
-                  `逐句转写与译文（${record.transcript.length} 句）`,
-                  `Transcript and translation (${record.transcript.length} lines)`,
+                  `转写与译文（${record.transcript.length} 段）`,
+                  `Transcript and translation (${record.transcript.length} parts)`,
                 )}
               </summary>
               <ol className="lecture-caption-list">
