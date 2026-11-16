@@ -237,6 +237,8 @@ def test_classify_is_local_puts_overview_before_category_and_returns_only_the_la
     assert classifier.classify(sample_mail(body="x" * 9000)) == "求职邮件"
     assert seen["stream"] is False and "tools" not in seen
     assert list(seen["format"]["properties"]) == ["overview", "category"]
+    # The same context size as summaries, so Ollama does not reload the model between them.
+    assert seen["options"]["num_ctx"] == NUM_CTX
     assert "没有任何工具权限" in seen["messages"][0]["content"]
     assert "求职邮件" in seen["messages"][0]["content"]
     user = json.loads(seen["messages"][1]["content"])

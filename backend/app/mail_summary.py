@@ -631,7 +631,8 @@ class LocalMailSummarizer:
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
             ],
             "format": MailClassification.model_json_schema(),
-            "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 200},
+            # Same num_ctx as every other feature so Ollama never reloads the model.
+            "options": {"temperature": 0, "num_ctx": NUM_CTX, "num_predict": 200},
             "keep_alive": "10m",
         }
         try:
