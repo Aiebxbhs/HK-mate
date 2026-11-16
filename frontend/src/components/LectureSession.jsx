@@ -52,6 +52,43 @@ export function recordedSeconds(segments, now = Date.now()) {
   )
 }
 
+/**
+ * Captions grouped into the paragraphs the server assigned (one caption is one stretch of
+ * speech). The Chinese of a paragraph arrives sentence by sentence and is joined here.
+ * Captions without a paragraph number (older drafts) each stand alone.
+ */
+export function captionParagraphs(captions) {
+  const groups = []
+  for (const caption of captions) {
+    const last = groups.at(-1)
+    const pending = caption.status === 'pending'
+    const failed = caption.status === 'failed'
+    if (
+      last &&
+      caption.paragraph != null &&
+      last.segment === caption.segment &&
+      last.paragraph === caption.paragraph
+    ) {
+      last.en = `${last.en} ${caption.en}`
+      last.zh += caption.zh || ''
+      last.pending = last.pending || pending
+      last.failed = last.failed || failed
+    } else {
+      groups.push({
+        key: caption.key,
+        segment: caption.segment,
+        paragraph: caption.paragraph,
+        at_seconds: caption.at_seconds,
+        en: caption.en,
+        zh: caption.zh || '',
+        pending,
+        failed,
+      })
+    }
+  }
+  return groups
+}
+
 const LectureSessionContext = createContext(null)
 
 /** The lecture session, or null when no provider is mounted above. */
@@ -108,13 +145,13 @@ export function LectureSessionProvider({ user, children }) {
       ...current,
       segments: [...current.segments, { index, startedAt: new Date(segmentStart).toISOString() }],
     }))
-    const updateCaption = (key, changes) =>
+    const updateCaptions = (change) =>
       setDraft((current) =>
         current
           ? {
               ...current,
               captions: current.captions.map((caption) =>
-                caption.key === key ? { ...caption, ...changes } : caption,
+                caption.segment === index ? change(caption) : caption,
               ),
             }
           : current,
@@ -142,7 +179,11 @@ export function LectureSessionProvider({ user, children }) {
         onPartial: (message) =>
           setInterim(
             message.en
-              ? { en: message.en, at_seconds: Math.round((offset + message.offset) * 10) / 10 }
+              ? {
+                  en: message.en,
+                  segment: index,
+                  at_seconds: Math.round((offset + message.offset) * 10) / 10,
+                }
               : null,
           ),
         onCaption: (message) => {
@@ -156,6 +197,8 @@ export function LectureSessionProvider({ user, children }) {
                     {
                       key: `${index}-${message.id}`,
                       segment: index,
+                      n: message.id,
+                      paragraph: message.paragraph ?? message.id,
                       at_seconds: Math.round((offset + message.offset) * 10) / 10,
                       duration: message.duration,
                       en: message.en,
@@ -167,11 +210,24 @@ export function LectureSessionProvider({ user, children }) {
               : current,
           )
         },
-        onTranslation: (message) =>
-          updateCaption(`${index}-${message.id}`, {
-            zh: message.zh,
-            status: message.zh ? 'done' : 'failed',
-          }),
+        // One or more finished sentences: the text is attached to the newest caption it
+        // draws on (message.id), and every caption up to message.upto is now fully translated.
+        onTranslation: (message) => {
+          const upto = message.upto ?? message.id
+          const failed = !message.zh
+          updateCaptions((caption) => {
+            let next = caption
+            if (caption.n === message.id) {
+              next = failed
+                ? { ...next, status: 'failed' }
+                : { ...next, zh: `${next.zh || ''}${message.zh}` }
+            }
+            if (next.n <= upto && next.status === 'pending') {
+              next = { ...next, status: failed ? 'failed' : 'done' }
+            }
+            return next
+          })
+        },
         onLevel: setLevel,
         onError: (message) => {
           setStreamError(message)
@@ -182,6 +238,10 @@ export function LectureSessionProvider({ user, children }) {
           recording.current = null
           setInterim(null)
           closeSegment(index)
+          // Nothing more will arrive for this recording.
+          updateCaptions((caption) =>
+            caption.status === 'pending' ? { ...caption, status: 'failed' } : caption,
+          )
           setRecState('off')
           setLevel(0)
         },

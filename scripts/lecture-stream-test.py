@@ -83,6 +83,7 @@ def ted_audio(index: int):
 def run(client: TestClient, pcm: bytes, seconds: float, show: int, score: bool) -> None:
     received, arrival, first_partial = [], {}, {}
     partial_count = 0
+    translated = 0  # captions fully translated so far
     with client.websocket_connect("/api/v1/lecture/stream", headers={"Origin": ORIGIN}) as ws:
         load_started = time.monotonic()
         while (message := ws.receive_json()).get("state") != "listening":
@@ -108,8 +109,14 @@ def run(client: TestClient, pcm: bytes, seconds: float, show: int, score: bool) 
             if message["type"] == "partial" and message.get("en"):
                 first_partial.setdefault(message["offset"], now)
                 partial_count += 1
-            if message["type"] in ("caption", "translation"):
-                arrival.setdefault(message["id"], {})[message["type"]] = now
+            if message["type"] == "caption":
+                arrival.setdefault(message["id"], {})["caption"] = now
+                received.append(message)
+            if message["type"] == "translation":
+                # A translation covers every caption up to "upto" (sentences span captions).
+                for cid in range(translated + 1, message["upto"] + 1):
+                    arrival.setdefault(cid, {})["translation"] = now
+                translated = max(translated, message["upto"])
                 received.append(message)
             if message["type"] == "error":
                 raise SystemExit(message["message"])
@@ -118,7 +125,7 @@ def run(client: TestClient, pcm: bytes, seconds: float, show: int, score: bool) 
         thread.join()
 
     captions = {m["id"]: m for m in received if m["type"] == "caption"}
-    translations = {m["id"]: m for m in received if m["type"] == "translation"}
+    translations = [m for m in received if m["type"] == "translation"]
     caption_delay, translation_delay, from_start, lengths, first_english = [], [], [], [], []
     for cid, caption in captions.items():
         spoken_end = caption["offset"] + caption["duration"]
@@ -136,8 +143,12 @@ def run(client: TestClient, pcm: bytes, seconds: float, show: int, score: bool) 
         p90 = values[int(0.9 * (len(values) - 1))]
         return f"median {statistics.median(values):.2f}s, P90 {p90:.2f}s, max {values[-1]:.2f}s"
 
-    failed = sum(1 for t in translations.values() if not t["zh"])
-    print(f"audio {seconds:.0f}s | captions {len(captions)} | translations failed {failed}")
+    failed = sum(1 for t in translations if not t["zh"])
+    paragraphs = len({c["paragraph"] for c in captions.values()})
+    print(
+        f"audio {seconds:.0f}s | captions {len(captions)} | paragraphs {paragraphs} | "
+        f"translated units {len(translations)} | failed {failed}"
+    )
     print(f"segment length: {stats(lengths)}")
     print(f"sentence end -> English caption: {stats(caption_delay)}")
     print(f"sentence end -> Chinese caption: {stats(translation_delay)}")
@@ -151,9 +162,12 @@ def run(client: TestClient, pcm: bytes, seconds: float, show: int, score: bool) 
         script = (ROOT / "scripts/bench-data/lecture_script.txt").read_text()
         hypothesis = " ".join(captions[i]["en"] for i in sorted(captions))
         print(f"WER vs script (basic normalizer): {jiwer.wer(norm(script), norm(hypothesis)):.3f}")
-    for cid in sorted(captions)[:show]:
-        print(f"  [{captions[cid]['offset']:6.1f}s] {captions[cid]['en']}")
-        print(f"            {translations.get(cid, {}).get('zh')}")
+    for number in sorted({c["paragraph"] for c in captions.values()})[:show]:
+        ids = [cid for cid in sorted(captions) if captions[cid]["paragraph"] == number]
+        print(f"  [{captions[ids[0]]['offset']:6.1f}s] {' '.join(captions[i]['en'] for i in ids)}")
+        print(
+            f"            {''.join(t['zh'] or '(failed)' for t in translations if t['id'] in ids)}"
+        )
 
 
 if __name__ == "__main__":

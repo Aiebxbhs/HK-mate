@@ -125,7 +125,7 @@ it('ends the course, requires a course name and saves notes with course info', a
   expect(within(form).getByLabelText(/AI 摘要与重点/)).toBeDisabled()
   expect(within(form).getByText('这节课没有录音字幕，无法生成 AI 摘要。')).toBeVisible()
   expect(api.lectureSummary).not.toHaveBeenCalled()
-  expect(within(form).getByLabelText(/逐句转写与译文/)).toBeDisabled()
+  expect(within(form).getByLabelText(/转写与译文/)).toBeDisabled()
   expect(await screen.findAllByRole('option', { hidden: true })).toHaveLength(1)
 
   fireEvent.click(within(form).getByRole('button', { name: '保存到课程记录' }))
@@ -249,7 +249,7 @@ it('asks for permission once, then records segments with bilingual captions', as
     handlers.onTranslation({ id: 2, zh: null })
   })
   expect(within(captions).getByText('Adam 结合了动量。')).toBeVisible()
-  expect(within(captions).getByText('（这句没有翻译成功）')).toBeVisible()
+  expect(within(captions).getByText('（这段没有翻译成功）')).toBeVisible()
 
   await act(async () => {
     vi.setSystemTime(new Date(START.getTime() + 90_000))
@@ -275,6 +275,77 @@ it('asks for permission once, then records segments with bilingual captions', as
   expect(stored.segments.length).toBe(2)
 })
 
+it('shows captions as paragraphs and adds the Chinese sentence by sentence', async () => {
+  const { handlers } = fakeStream()
+  localStorage.setItem('hkmate.lecture.consent.user-1', '1')
+  render(<LectureLive user={user} onOpenRecords={vi.fn()} />)
+  fireEvent.click(screen.getByRole('button', { name: /开始课程/ }))
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: '开始录音' }))
+  })
+  await act(async () => {
+    handlers.onStatus('listening')
+    // Two stretches of speech in one paragraph; the sentence runs across both.
+    handlers.onCaption({ id: 1, paragraph: 1, offset: 0, duration: 5, en: 'So the gradient' })
+    handlers.onCaption({
+      id: 2,
+      paragraph: 1,
+      offset: 5,
+      duration: 3,
+      en: "of the loss is zero. Now let's",
+    })
+    handlers.onTranslation({ id: 2, upto: 1, zh: '所以损失的梯度为零。' })
+    handlers.onPartial({ offset: 8, en: 'look at' })
+  })
+  const captions = screen.getByRole('region', { name: '实时字幕' })
+  const items = within(captions).getAllByRole('listitem')
+  // One paragraph: joined English, what is being said now in grey, Chinese so far.
+  expect(items).toHaveLength(1)
+  expect(items[0].querySelector('.lecture-caption-en')).toHaveTextContent(
+    "So the gradient of the loss is zero. Now let's look at",
+  )
+  expect(items[0].querySelector('.lecture-caption-interim')).toHaveTextContent('look at')
+  expect(items[0].querySelector('.lecture-caption-zh')).toHaveTextContent('所以损失的梯度为零。 …')
+
+  await act(async () => {
+    handlers.onPartial({ en: null })
+    handlers.onTranslation({ id: 2, upto: 2, zh: '现在我们来' })
+    // After a long pause the server starts a new paragraph.
+    handlers.onCaption({ id: 3, paragraph: 2, offset: 14, duration: 2, en: 'Next topic.' })
+    handlers.onTranslation({ id: 3, upto: 3, zh: '下一个主题。' })
+  })
+  const after = within(captions).getAllByRole('listitem')
+  expect(after).toHaveLength(2)
+  expect(after[0].querySelector('.lecture-caption-zh').textContent).toBe(
+    '所以损失的梯度为零。现在我们来',
+  )
+  expect(after[1]).toHaveTextContent('Next topic.')
+  const stored = JSON.parse(localStorage.getItem('hkmate.lecture.draft.user-1'))
+  expect(stored.captions.map((c) => c.status)).toEqual(['done', 'done', 'done'])
+
+  // The saved transcript is one line per paragraph.
+  fireEvent.click(screen.getByRole('button', { name: '暂停录音' }))
+  await act(async () => {
+    handlers.onClosed()
+  })
+  api.lectureSummary.mockRejectedValue(new Error('模型未运行'))
+  confirmEnd()
+  const form = screen.getByRole('form', { name: '保存课程' })
+  fireEvent.change(within(form).getByLabelText(/课程名称/), { target: { value: 'DL' } })
+  fireEvent.click(within(form).getByLabelText('转写与译文（2 段）'))
+  await act(async () => {
+    fireEvent.click(within(form).getByRole('button', { name: '保存到课程记录' }))
+  })
+  expect(api.createLectureRecord.mock.calls[0][0].transcript).toEqual([
+    {
+      at_seconds: 0,
+      en: "So the gradient of the loss is zero. Now let's",
+      zh: '所以损失的梯度为零。现在我们来',
+    },
+    { at_seconds: 14, en: 'Next topic.', zh: '下一个主题。' },
+  ])
+})
+
 it('saves the transcript only when ticked, and reports microphone errors', async () => {
   const { handlers } = fakeStream()
   localStorage.setItem('hkmate.lecture.consent.user-1', '1')
@@ -290,7 +361,7 @@ it('saves the transcript only when ticked, and reports microphone errors', async
   })
   confirmEnd()
   const form = screen.getByRole('form', { name: '保存课程' })
-  const transcript = within(form).getByLabelText('逐句转写与译文（1 句）')
+  const transcript = within(form).getByLabelText('转写与译文（1 段）')
   expect(transcript).not.toBeChecked()
   fireEvent.click(transcript)
   fireEvent.change(within(form).getByLabelText('课程名称（必填）'), { target: { value: 'ML' } })

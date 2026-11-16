@@ -157,10 +157,10 @@ it('shows and exports a saved transcript', async () => {
   const dl = await screen.findByRole('region', { name: 'Deep Learning' })
   fireEvent.click(within(dl).getAllByRole('button')[0])
   const article = await screen.findByRole('article', { name: 'Deep Learning' })
-  expect(within(article).getByText('逐句转写与译文（2 句）')).toBeVisible()
+  expect(within(article).getByText('转写与译文（2 段）')).toBeVisible()
   expect(within(article).getByText('（无译文）')).toBeInTheDocument()
   const text = lectureMarkdown(withTranscript)
-  expect(text).toContain('## 逐句转写\n\n- [01:02] Adam combines momentum.\n  Adam 结合了动量。')
+  expect(text).toContain('## 转写与译文\n\n- [01:02] Adam combines momentum.\n  Adam 结合了动量。')
   expect(text).toContain('- [01:10] Next slide.')
 })
 

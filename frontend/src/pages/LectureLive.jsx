@@ -4,6 +4,7 @@ import Icon from '../components/Icon'
 import LectureSummaryView from '../components/LectureSummaryView'
 import {
   LectureSessionProvider,
+  captionParagraphs,
   recordedSeconds,
   useLectureSession,
 } from '../components/LectureSession'
@@ -204,6 +205,8 @@ function SaveForm({ draft, courseNames, busy, onSummary, onBack, onSaved, onDisc
   const [keepTranscript, setKeepTranscript] = useState(false)
   const [keepSummary, setKeepSummary] = useState(true)
   const captions = draft.captions.filter((caption) => caption.en)
+  // The saved transcript is one line per paragraph; the summary still reads every caption.
+  const paragraphs = captionParagraphs(captions)
   const summaryState = useLectureSummary({
     captions,
     notes: draft.notes,
@@ -239,7 +242,11 @@ function SaveForm({ draft, courseNames, busy, onSummary, onBack, onSaved, onDisc
         ),
         summary: keepSummary && summary ? summary : null,
         transcript: keepTranscript
-          ? captions.map(({ at_seconds, en, zh }) => ({ at_seconds, en, zh: zh || null }))
+          ? paragraphs.map(({ at_seconds, en, zh }) => ({
+              at_seconds,
+              en: en.slice(0, 2000),
+              zh: zh.slice(0, 2000) || null,
+            }))
           : null,
         notes: keepNotes
           ? draft.notes.map(({ at_seconds, text, important }) => ({ at_seconds, text, important }))
@@ -331,8 +338,8 @@ function SaveForm({ draft, courseNames, busy, onSummary, onBack, onSaved, onDisc
             onChange={(event) => setKeepTranscript(event.target.checked)}
           />
           {tr(
-            `逐句转写与译文（${captions.length} 句）`,
-            `Transcript and translation (${captions.length} lines)`,
+            `转写与译文（${paragraphs.length} 段）`,
+            `Transcript and translation (${paragraphs.length} paragraphs)`,
           )}
         </label>
       </fieldset>
@@ -481,6 +488,9 @@ function Captions({ captions, interim, recState, level }) {
   const list = useRef(null)
   const follow = useRef(true)
   useLayoutEffect(() => keepInWindow(() => list.current, 44))
+  const groups = captionParagraphs(captions)
+  // What is being said right now continues the last paragraph of this recording.
+  const joinInterim = Boolean(interim) && groups.at(-1)?.segment === interim.segment
   useEffect(() => {
     const element = list.current
     if (element && follow.current) element.scrollTop = element.scrollHeight
@@ -507,22 +517,33 @@ function Captions({ captions, interim, recState, level }) {
             follow.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80
           }}
         >
-          {captions.map((caption) => (
-            <li key={caption.key} className="lecture-caption">
-              <span className="lecture-note-time">{formatElapsed(caption.at_seconds)}</span>
-              <p className="lecture-caption-en" lang="en">
-                {caption.en}
-              </p>
-              <p className={`lecture-caption-zh is-${caption.status}`} lang="zh-CN">
-                {caption.status === 'pending'
-                  ? tr('翻译中…', 'Translating…')
-                  : caption.status === 'failed'
-                    ? tr('（这句没有翻译成功）', '(This sentence was not translated)')
-                    : caption.zh}
-              </p>
-            </li>
-          ))}
-          {interim && (
+          {groups.map((group, index) => {
+            const speaking = joinInterim && index === groups.length - 1
+            return (
+              <li key={group.key} className="lecture-caption">
+                <span className="lecture-note-time">{formatElapsed(group.at_seconds)}</span>
+                <p className="lecture-caption-en" lang="en">
+                  {group.en}
+                  {speaking && <span className="lecture-caption-interim"> {interim.en}</span>}
+                </p>
+                <p
+                  className={`lecture-caption-zh is-${group.zh ? 'done' : group.pending ? 'pending' : 'failed'}`}
+                  lang="zh-CN"
+                >
+                  {group.zh}
+                  {group.pending || speaking
+                    ? group.zh
+                      ? ' …'
+                      : tr('翻译中…', 'Translating…')
+                    : group.failed &&
+                      (group.zh
+                        ? tr('（有一部分没有翻译成功）', ' (part of this was not translated)')
+                        : tr('（这段没有翻译成功）', '(This paragraph was not translated)'))}
+                </p>
+              </li>
+            )
+          })}
+          {interim && !joinInterim && (
             <li className="lecture-caption is-interim" aria-live="off">
               <span className="lecture-note-time">{formatElapsed(interim.at_seconds)}</span>
               <p className="lecture-caption-en" lang="en">
@@ -538,8 +559,8 @@ function Captions({ captions, interim, recState, level }) {
           <p>
             {recState === 'off'
               ? tr(
-                  '点击“开始录音”后，老师的英文讲话和中文翻译会逐句显示在这里。',
-                  'After you click “Start recording”, the lecturer’s English and the Chinese translation appear here sentence by sentence.',
+                  '点击“开始录音”后，老师的英文讲话和中文翻译会成段显示在这里。',
+                  'After you click “Start recording”, the lecturer’s English and the Chinese translation appear here in paragraphs.',
                 )
               : tr('正在等待老师开口…', 'Waiting for the lecturer to speak…')}
           </p>
