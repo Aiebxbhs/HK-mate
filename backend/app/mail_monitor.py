@@ -10,16 +10,20 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session, sessionmaker
 
-from app import mail_categories
+from app import mail_categories, netease
 from app.gmail import summary
+from app.i18n import tr
 from app.mail_service import MailService
 from app.mail_summary import LocalMailSummarizer, SummaryError
-from app.models import EmailConnection, MailNotification, MailWatch, User
+from app.models import EmailConnection, LoginSession, MailNotification, MailWatch, User
 from app.services import AuthError
+from app.system_notify import sender_name
 
 # Older mail is rescanned every ten minutes, a few provider pages at most.
 BACKFILL_EVERY = 600
 BACKFILL_PAGES = 3
+# IMAP mailboxes need a sign-in per check, so they are checked less often than Gmail.
+IMAP_EVERY = 60
 
 
 class MailMonitor:
@@ -30,16 +34,23 @@ class MailMonitor:
         summarizer: LocalMailSummarizer,
         model_lock: Lock,
         paused: Callable[[], bool] = lambda: False,
+        notifier: Callable[[str, str, str], None] | None = None,
     ) -> None:
         self.sessions, self.mail, self.summarizer = sessions, mail, summarizer
         self.model_lock = model_lock
         self.paused = paused
+        # Shows a system banner (title, subtitle, body); None turns banners off.
+        self.notifier = notifier
+        # Notification ids already shown, so a retry does not announce the same mail twice.
+        self.announced: set[str] = set()
         self.stopping = Event()
         self.wakeup = Event()
         self.threads = []
         self.error_code = ""
         # connection id -> monotonic time of its last backfill scan
         self.backfilled: dict[str, float] = {}
+        # connection id -> monotonic time of its last IMAP check
+        self.imap_checked: dict[str, float] = {}
 
     def start(self) -> None:
         self.recover_pending()
@@ -90,24 +101,20 @@ class MailMonitor:
                 worked = False
             self.stopping.wait(0.2 if worked else 1)
 
-    def _connections(self) -> list[tuple[str, str, str]]:
+    def _connections(self) -> list[tuple[str, str, str, str]]:
         with self.sessions() as db:
             return [
-                (row.id, row.user_id, row.email_address)
+                (row.id, row.user_id, row.email_address, row.provider)
                 for row in db.scalars(
                     select(EmailConnection)
                     .join(User)
-                    .where(
-                        User.is_active.is_(True),
-                        EmailConnection.status == "connected",
-                        EmailConnection.provider == "google",
-                    )
+                    .where(User.is_active.is_(True), EmailConnection.status == "connected")
                 )
             ]
 
     def queue_backfill(self, every: float = BACKFILL_EVERY) -> None:
         """Queue each mailbox's received mail of the last days, and older notices, for labels."""
-        for cid, owner, _ in self._connections():
+        for cid, owner, _, provider in self._connections():
             if self.stopping.is_set():
                 return
             last = self.backfilled.get(cid)
@@ -119,7 +126,9 @@ class MailMonitor:
                     db.rollback()
                 ids: list[str] = []
                 page_token = None
-                for _ in range(BACKFILL_PAGES):
+                if provider == netease.PROVIDER:
+                    ids = self.mail.netease.recent_ids(token, mail_categories.BACKFILL_DAYS)
+                for _ in range(0 if provider == netease.PROVIDER else BACKFILL_PAGES):
                     params = {
                         "maxResults": 100,
                         "includeSpamTrash": "false",
@@ -152,26 +161,20 @@ class MailMonitor:
             self.backfilled[cid] = time.monotonic()
 
     def poll_once(self) -> None:
-        with self.sessions() as db:
-            connections = [
-                (row.id, row.user_id, row.email_address)
-                for row in db.scalars(
-                    select(EmailConnection)
-                    .join(User)
-                    .where(
-                        User.is_active.is_(True),
-                        EmailConnection.status == "connected",
-                        EmailConnection.provider == "google",
-                    )
-                )
-            ]
-        for cid, owner, mailbox in connections:
+        for cid, owner, mailbox, provider in self._connections():
             if self.stopping.is_set():
                 return
             try:
-                self._poll_connection(cid, owner, mailbox)
+                if provider == netease.PROVIDER:
+                    self._poll_imap(cid, owner, mailbox)
+                else:
+                    self._poll_connection(cid, owner, mailbox)
             except Exception as exc:
                 code = exc.code if isinstance(exc, AuthError) else "MAIL_MONITOR_FAILED"
+                if code == "MAIL_REAUTHORIZE" and provider == netease.PROVIDER:
+                    # Stop signing in with a refused code; the user reconnects in Mailboxes.
+                    with self.sessions() as db:
+                        self.mail.reauthorize(db, owner, cid)
                 with self.sessions() as db:
                     updated = db.execute(
                         update(MailWatch)
@@ -273,6 +276,51 @@ class MailMonitor:
             last_checked = int(time.time())
         self._save_watch(cid, owner, state, last_checked)
 
+    def _poll_imap(self, cid: str, owner: str, mailbox: str, every: float = IMAP_EVERY) -> None:
+        last = self.imap_checked.get(cid)
+        if last is not None and time.monotonic() - last < every:
+            return
+        self.imap_checked[cid] = time.monotonic()
+        with self.sessions() as db:
+            watch = db.get(MailWatch, cid)
+            if watch is None:
+                # First connection: only the last hour counts as new.
+                initial = {"phase": "imap", "validity": None, "last_uid": 0}
+                watch = MailWatch(
+                    connection_id=cid,
+                    user_id=owner,
+                    encrypted_state=self.mail.vault.encrypt(json.dumps(initial)),
+                    last_checked_at=0,
+                    error_code="",
+                )
+                db.add(watch)
+                db.commit()
+            state = json.loads(self.mail.vault.decrypt(watch.encrypted_state))
+            last_checked = watch.last_checked_at
+            _, token = self.mail.access(db, owner, cid)
+            db.rollback()
+        # After a renumbered folder every id changes, so ids cannot remove duplicates: rescan
+        # exactly from the start of the last completed check. Mail is never announced twice;
+        # only a clock difference with the server could hide mail from those few seconds.
+        started = int(time.time())
+        after = last_checked or started - 3600
+        validity, top, found = self.mail.netease.new_mail(
+            token, cid, mailbox, state.get("validity"), state.get("last_uid", 0), after
+        )
+        for item in sorted(found, key=lambda item: item.received_at):
+            if self.stopping.is_set():
+                return
+            self._insert(
+                cid,
+                owner,
+                item.id,
+                item.model_dump(mode="json"),
+                int(item.received_at.timestamp()),
+            )
+        self._save_watch(
+            cid, owner, {"phase": "imap", "validity": validity, "last_uid": top}, started
+        )
+
     def _save_watch(self, cid: str, owner: str, state: dict, checked: int) -> None:
         if self.stopping.is_set():
             return
@@ -320,7 +368,17 @@ class MailMonitor:
             and int(raw["internalDate"]) // 1000 <= minimum_received_at
         ):
             return
-        metadata = summary(raw, cid, mailbox).model_dump(mode="json")
+        self._insert(
+            cid,
+            owner,
+            message_id,
+            summary(raw, cid, mailbox).model_dump(mode="json"),
+            int(raw["internalDate"]) // 1000,
+        )
+
+    def _insert(
+        self, cid: str, owner: str, message_id: str, metadata: dict, received_at: int
+    ) -> None:
         payload = self.mail.vault.encrypt(json.dumps({"mail": metadata, "summary": None}))
         with self.sessions() as db:
             connection = db.get(EmailConnection, cid)
@@ -338,7 +396,7 @@ class MailMonitor:
                     dismissed=False,
                     error_code="",
                     created_at=int(time.time()),
-                    received_at=int(raw["internalDate"]) // 1000,
+                    received_at=received_at,
                 )
                 .on_conflict_do_nothing(index_elements=["connection_id", "message_id"])
             )
@@ -455,3 +513,28 @@ class MailMonitor:
                     db, row.user_id, row.connection_id, row.message_id, generated["category"]
                 )
             db.commit()
+            announce = self.notifier is not None and notification_id not in self.announced
+            if announce:
+                # Only for accounts signed in on this computer: a signed-out account's mail
+                # must not appear on the screen.
+                announce = (
+                    db.scalar(
+                        select(LoginSession.id)
+                        .where(
+                            LoginSession.user_id == row.user_id,
+                            LoginSession.expires_at > int(time.time()),
+                        )
+                        .limit(1)
+                    )
+                    is not None
+                )
+                language = db.scalar(select(User.language).where(User.id == row.user_id)) or "zh"
+        if announce:
+            self.announced.add(notification_id)
+            self.notifier(
+                sender_name(payload["mail"]["sender"]),
+                payload["mail"]["subject"],
+                generated["overview"]
+                if generated
+                else tr("新邮件，摘要未生成，请在 HK Mate 中查看。", language),
+            )

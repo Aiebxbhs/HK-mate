@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app import mail_categories, services
+from app import mail_categories, netease, services
 from app.api import database
 from app.core.security import SESSION_COOKIE
 from app.i18n import request_language
@@ -18,7 +18,13 @@ from app.mail_reply import (
     ReplyRequest,
     ReplyTone,
 )
-from app.mail_schemas import AuthorizeOutput, ConnectionsOutput, MailDetail, MailList
+from app.mail_schemas import (
+    AuthorizeOutput,
+    ConnectionOutput,
+    ConnectionsOutput,
+    MailDetail,
+    MailList,
+)
 from app.mail_service import connection_output, owned
 from app.mail_summary import MODEL, EmailSummary, SummaryError
 from app.models import EmailConnection
@@ -84,6 +90,25 @@ def callback(
         status_code=303,
         headers={"Referrer-Policy": "no-referrer"},
     )
+
+
+class NeteaseConnectInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email_address: str = Field(pattern=netease.ADDRESS, max_length=80)
+    # Client authorization code from the web mailbox's IMAP settings, not the login password.
+    authorization_code: str = Field(pattern=r"^[A-Za-z0-9]{8,64}$")
+
+
+@router.post("/email-connections/netease", response_model=ConnectionOutput, status_code=201)
+def connect_netease(
+    payload: NeteaseConnectInput, request: Request, db: Session = Depends(database)
+) -> ConnectionOutput:
+    user = services.current_user(db, request.cookies.get(SESSION_COOKIE))
+    services.check_rate_limit(db, "mail-authorize", user.id, request.client.host)
+    row = request.app.state.mail.connect_netease(
+        db, user.id, payload.email_address.lower(), payload.authorization_code
+    )
+    return connection_output(row)
 
 
 @router.delete("/email-connections/{connection_id}", status_code=204)

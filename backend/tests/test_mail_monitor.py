@@ -381,3 +381,61 @@ def test_labels_belong_to_one_user_and_go_with_the_mailbox(labelled):
         db.delete(connection)
         db.commit()
     assert categories(client) == {}
+
+
+def test_system_banner_once_per_mail_and_only_for_signed_in_accounts(monitored, monkeypatch):
+    from app.models import LoginSession
+
+    client, monitor, provider = monitored
+    shown = []
+    monitor.notifier = lambda title, subtitle, body: shown.append((title, subtitle, body))
+    monitor.poll_once()
+    original = monitor.summarizer.summarize
+
+    def fail(mail, language="zh"):
+        raise SummaryError("SUMMARY_TIMEOUT")
+
+    monkeypatch.setattr(monitor.summarizer, "summarize", fail)
+    assert monitor.process_one()
+    assert len(shown) == 1 and "摘要未生成" in shown[0][2]
+    failed = next(
+        row
+        for row in client.get("/api/v1/mail-notifications").json()["items"]
+        if row["status"] == "failed"
+    )
+    monkeypatch.setattr(monitor.summarizer, "summarize", original)
+    assert post(client, f"/api/v1/mail-notifications/{failed['id']}/retry").status_code == 204
+    while monitor.process_one():
+        pass
+    # The retried mail is not announced again; the second mail is, with its summary.
+    assert len(shown) == 2
+    assert shown[1][1].startswith("Synthetic subject") and "课程团队" in shown[1][2]
+
+    # Signed out: later mail is still summarised but never shown on the screen.
+    with client.app.state.session_factory() as db:
+        for row in db.scalars(select(LoginSession)):
+            db.delete(row)
+        db.commit()
+    provider["history"] = ["new-c"]
+    monitor.poll_once()
+    assert monitor.process_one()
+    assert len(shown) == 2
+
+
+def test_banner_text_is_one_short_line_passed_as_arguments(monkeypatch):
+    from app import system_notify
+
+    calls = []
+    monkeypatch.setattr(system_notify.sys, "platform", "darwin")
+    monkeypatch.setattr(
+        system_notify.subprocess, "run", lambda args, **kwargs: calls.append((args, kwargs))
+    )
+    system_notify.notify('-e "x"\ndo shell script', "s" * 500, "b")
+    args, kwargs = calls[0]
+    assert args[:2] == ["/usr/bin/osascript", "-"]
+    assert args[2] == '-e "x" do shell script' and len(args[3]) == 120
+    assert b"do shell script" not in kwargs["input"]
+    assert system_notify.sender_name("Course Team <team@example.com>") == "Course Team"
+    monkeypatch.setattr(system_notify.sys, "platform", "linux")
+    system_notify.notify("a", "b", "c")
+    assert len(calls) == 1

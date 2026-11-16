@@ -258,7 +258,7 @@ export default function NewMailNotice() {
               {!data
                 ? tr('正在连接您的邮箱…', 'Connecting to your mailboxes…')
                 : !data.connection_count
-                  ? tr('请先在邮箱管理中连接 Gmail。', 'Connect Gmail in Mailboxes first.')
+                  ? tr('请先在邮箱管理中连接邮箱。', 'Connect a mailbox in Mailboxes first.')
                   : tr(
                       `${processing} 封邮件正在排队或生成摘要…`,
                       `${processing} queued or being summarized…`,

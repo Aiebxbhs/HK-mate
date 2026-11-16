@@ -70,6 +70,26 @@ export function gmailComposeUrl({ mailbox, to, subject, body }) {
   return `https://mail.google.com/mail/?${params}`
 }
 
+/**
+ * Where a finished draft opens. Gmail has a compose page that takes the text; NetEase mail has
+ * none, so its drafts open in the computer's mail app instead.
+ */
+export function composeTarget({ mailbox, to, subject, body }) {
+  if (/@(163\.com|126\.com|yeah\.net)$/i.test(mailbox || '')) {
+    const params = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    return {
+      href: `mailto:${encodeURIComponent(to)}?${params}`,
+      label: tr('在邮件 App 中打开', 'Open in mail app'),
+      gmail: false,
+    }
+  }
+  return {
+    href: gmailComposeUrl({ mailbox, to, subject, body }),
+    label: tr('在 Gmail 中打开', 'Open in Gmail'),
+    gmail: true,
+  }
+}
+
 /** Draft-only: generates text with the local model; nothing is sent from HK Mate. */
 export default function ReplyDraftPanel({ connectionId, messageId }) {
   const [intent, setIntent] = useState('accept')
@@ -127,6 +147,15 @@ export default function ReplyDraftPanel({ connectionId, messageId }) {
       )
     }
   }
+
+  const target =
+    draft &&
+    composeTarget({
+      mailbox: draft.mailbox,
+      to: draft.to_address,
+      subject: draft.subject,
+      body: text,
+    })
 
   return (
     <section className="reply-panel" aria-label={tr('起草回复', 'Draft a reply')}>
@@ -216,7 +245,7 @@ export default function ReplyDraftPanel({ connectionId, messageId }) {
           {error}
         </p>
       )}
-      {draft && (
+      {draft && target && (
         <div className="reply-result">
           <dl className="reply-meta">
             <dt>{tr('收件人', 'To')}</dt>
@@ -262,17 +291,12 @@ export default function ReplyDraftPanel({ connectionId, messageId }) {
             </button>
             <a
               className="mail-primary"
-              href={gmailComposeUrl({
-                mailbox: draft.mailbox,
-                to: draft.to_address,
-                subject: draft.subject,
-                body: text,
-              })}
+              href={target.href}
               target="_blank"
               rel="noopener noreferrer"
             >
               <Icon name="mail" size={16} aria-hidden="true" />
-              {tr('在 Gmail 中打开', 'Open in Gmail')}
+              {target.label}
             </a>
           </div>
           {copyState && (
@@ -281,10 +305,15 @@ export default function ReplyDraftPanel({ connectionId, messageId }) {
             </p>
           )}
           <p className="reply-note-text">
-            {tr(
-              `草稿由本地模型生成，发送前请逐句核对。在 Gmail 中发送时，发件人为 ${draft.mailbox}；从学校邮箱转发来的邮件也会从这个地址回复。`,
-              `Drafted by the local model; check every sentence before sending. Gmail sends it from ${draft.mailbox}, even for mail forwarded from your school account.`,
-            )}
+            {target.gmail
+              ? tr(
+                  `草稿由本地模型生成，发送前请逐句核对。在 Gmail 中发送时，发件人为 ${draft.mailbox}；从学校邮箱转发来的邮件也会从这个地址回复。`,
+                  `Drafted by the local model; check every sentence before sending. Gmail sends it from ${draft.mailbox}, even for mail forwarded from your school account.`,
+                )
+              : tr(
+                  '草稿由本地模型生成，发送前请逐句核对。邮件 App 会用它自己的默认发件人，发送前请确认；也可以复制草稿到网易邮箱网页版发送。',
+                  'Drafted by the local model; check every sentence before sending. The mail app uses its own default sender, so check it first; you can also copy the draft into the NetEase web mailbox.',
+                )}
           </p>
         </div>
       )}

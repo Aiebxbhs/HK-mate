@@ -10,6 +10,10 @@ class Settings:
     auto_mail_enabled: bool = field(
         default_factory=lambda: os.environ.get("HKM_AUTO_MAIL_ENABLED", "true").lower() == "true"
     )
+    # macOS Notification Center banner for each new mail (needs auto_mail_enabled).
+    system_notifications: bool = field(
+        default_factory=lambda: os.environ.get("HKM_SYSTEM_NOTIFICATIONS", "true").lower() == "true"
+    )
     database_path: Path = field(
         default_factory=lambda: Path(
             os.environ.get("HKM_DATABASE_PATH", str(ROOT / "private-data/hkumate.sqlite3"))
