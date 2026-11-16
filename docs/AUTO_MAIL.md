@@ -27,6 +27,7 @@
 ## 接口
 
 - `GET /api/v1/mail-notifications`：当前用户所有未忽略通知，含状态、摘要、类别（`category`，已存类别优先于摘要中的类别）、检测错误和最近成功检查时间。
+- 收件箱页面按邮箱分标签显示（2026-11-16），每次请求都带 `connection_id`，不混排不同邮箱的邮件。标签在页面最上方并标出该邮箱的新邮件通知数；通知区只显示当前邮箱的通知，数量由页面按通知的 `connection_id` 统计，接口未变。
 - `GET /api/v1/messages`：每封邮件附 `category` 与 `category_status`（`done` / `pending` / 无）。每页 100 条，`next_cursor` 为下一页游标，游标也验证归属；页面会自动加载全部页。
 - `POST /api/v1/mail-notifications/check`：唤醒检测线程，不同步等待模型。
 - `POST /api/v1/mail-notifications/{id}/dismiss`：仅隐藏该通知。

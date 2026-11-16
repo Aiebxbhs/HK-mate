@@ -11,6 +11,7 @@ vi.mock('../api/client', () => ({
     connections: vi.fn(),
     authorizeGoogle: vi.fn(),
     connectNetease: vi.fn(),
+    notifications: vi.fn(),
     disconnectMailbox: vi.fn(),
     messages: vi.fn(),
     message: vi.fn(),
@@ -168,7 +169,7 @@ it('opens plain-text message detail and never renders email HTML', async () => {
   expect(screen.queryByRole('region', { name: '邮件正文' })).not.toBeInTheDocument()
 })
 
-it('loads another page and applies mailbox and scope filters', async () => {
+it('loads another page and applies the scope filter within one mailbox', async () => {
   api.messages
     .mockResolvedValueOnce({ items: [message], next_cursor: 'cursor-2', issues: [] })
     .mockResolvedValueOnce({
@@ -183,13 +184,103 @@ it('loads another page and applies mailbox and scope filters', async () => {
   expect(await screen.findByRole('button', { name: /第二封邮件/ })).toBeVisible()
   expect(api.messages).toHaveBeenCalledWith({
     scope: 'inbox',
-    connectionId: '',
+    connectionId: mailbox.id,
     cursor: 'cursor-2',
   })
   await user.selectOptions(screen.getByLabelText('邮件范围'), 'received')
-  expect(api.messages).toHaveBeenLastCalledWith({ scope: 'received', connectionId: '' })
-  await user.selectOptions(screen.getByLabelText('邮箱'), mailbox.id)
   expect(api.messages).toHaveBeenLastCalledWith({ scope: 'received', connectionId: mailbox.id })
+  // A single mailbox needs no tabs.
+  expect(screen.queryByRole('tablist')).toBeNull()
+})
+
+it('keeps each mailbox in its own tab and never requests mixed mail', async () => {
+  const second = { ...mailbox, id: 'connection-2', email_address: 'second@163.com' }
+  api.connections.mockResolvedValue({ items: [mailbox, second], google_configured: true })
+  api.messages.mockImplementation(async ({ connectionId }) => ({
+    items: [
+      connectionId === second.id
+        ? { ...message, id: 'm-2', connection_id: second.id, subject: '网易邮件' }
+        : message,
+    ],
+    next_cursor: null,
+    issues: [],
+  }))
+  render(<Inbox onManage={vi.fn()} />)
+  const user = userEvent.setup()
+  expect(await screen.findByRole('button', { name: /测试邮件/ })).toBeVisible()
+  expect(screen.getByRole('tab', { name: mailbox.email_address })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await user.click(screen.getByRole('tab', { name: second.email_address }))
+  expect(await screen.findByRole('button', { name: /网易邮件/ })).toBeVisible()
+  expect(screen.queryByRole('button', { name: /测试邮件/ })).toBeNull()
+  expect(api.messages.mock.calls.map(([query]) => query.connectionId)).toEqual([
+    mailbox.id,
+    second.id,
+  ])
+})
+
+it('labels each mailbox tab with its new mail and shows notices for the open mailbox', async () => {
+  const second = { ...mailbox, id: 'connection-2', email_address: 'second@163.com' }
+  const notice = (id, connection, subject) => ({
+    id,
+    connection_id: connection.id,
+    message_id: `m-${id}`,
+    sender: 'sender@example.com',
+    mailbox: connection.email_address,
+    subject,
+    status: 'pending',
+    summary: null,
+    error: null,
+  })
+  api.connections.mockResolvedValue({ items: [mailbox, second], google_configured: true })
+  api.messages.mockResolvedValue({ items: [], next_cursor: null, issues: [] })
+  api.notifications.mockResolvedValue({
+    enabled: true,
+    connection_count: 2,
+    total_count: 3,
+    errors: [],
+    last_checked_at: null,
+    next_cursor: null,
+    items: [
+      notice('a', mailbox, '谷歌新邮件'),
+      notice('b', second, '网易新邮件一'),
+      notice('c', second, '网易新邮件二'),
+    ],
+  })
+  render(<Inbox onManage={vi.fn()} />)
+  const user = userEvent.setup()
+  const first = await screen.findByRole('tab', { name: 'first@example.com，1 封新邮件' })
+  expect(first).toHaveAttribute('aria-selected', 'true')
+  expect(await screen.findByRole('heading', { name: '1 封新邮件' })).toBeVisible()
+  expect(screen.getByText('谷歌新邮件')).toBeVisible()
+  expect(screen.queryByText('网易新邮件一')).toBeNull()
+  // The tabs come before the notices on the page.
+  const section = screen.getByRole('region', { name: '统一收件箱' })
+  expect(section.firstElementChild).toHaveAttribute('role', 'tablist')
+  await user.click(screen.getByRole('tab', { name: 'second@163.com，2 封新邮件' }))
+  expect(await screen.findByRole('heading', { name: '2 封新邮件' })).toBeVisible()
+  expect(screen.getByText('网易新邮件二')).toBeVisible()
+  expect(screen.queryByText('谷歌新邮件')).toBeNull()
+})
+
+it('opens the mailbox chosen in Mailboxes and reads nothing when none is connected', async () => {
+  const second = { ...mailbox, id: 'connection-2', email_address: 'second@163.com' }
+  api.connections.mockResolvedValue({ items: [mailbox, second], google_configured: true })
+  api.messages.mockResolvedValue({ items: [], next_cursor: null, issues: [] })
+  const { unmount } = render(<Inbox initialConnectionId={second.id} onManage={vi.fn()} />)
+  expect(await screen.findByRole('tab', { name: second.email_address })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  expect(api.messages).toHaveBeenLastCalledWith({ scope: 'inbox', connectionId: second.id })
+  unmount()
+  api.messages.mockClear()
+  api.connections.mockResolvedValue({ items: [], google_configured: true })
+  render(<Inbox onManage={vi.fn()} />)
+  expect(await screen.findByText('先在邮箱管理中添加邮箱，再来查看收件箱。')).toBeVisible()
+  expect(api.messages).not.toHaveBeenCalled()
 })
 
 it('labels today’s mail with a time and older mail with a date, in Hong Kong time', async () => {

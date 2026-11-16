@@ -181,7 +181,8 @@ export function receivedLabel(value, now = new Date()) {
 }
 
 export default function Inbox({ initialConnectionId = '', onManage }) {
-  const [connections, setConnections] = useState([])
+  // null until the mailbox list has loaded; each mailbox then has its own tab and list.
+  const [connections, setConnections] = useState(null)
   const [connectionId, setConnectionId] = useState(initialConnectionId)
   const [scope, setScope] = useState('inbox')
   const [items, setItems] = useState([])
@@ -191,6 +192,8 @@ export default function Inbox({ initialConnectionId = '', onManage }) {
   const [error, setError] = useState('')
   const [selected, setSelected] = useState(null)
   const [reload, setReload] = useState(0)
+  // New-mail notices per mailbox, reported by NewMailNotice: { connectionId: count }.
+  const [noticeCounts, setNoticeCounts] = useState({})
   const generation = useRef(0)
 
   useEffect(() => {
@@ -198,10 +201,18 @@ export default function Inbox({ initialConnectionId = '', onManage }) {
     api
       .connections()
       .then((data) => {
-        if (active) setConnections(data.items)
+        if (!active) return
+        setConnections(data.items)
+        // Mail is never mixed: open the requested mailbox, otherwise the first one.
+        setConnectionId((current) =>
+          data.items.some((item) => item.id === current) ? current : data.items[0]?.id || '',
+        )
       })
-      .catch(() => {
-        /* The message request below displays its own errors. */
+      .catch((cause) => {
+        if (!active) return
+        setConnections([])
+        setError(cause.message)
+        setLoading(false)
       })
     return () => {
       active = false
@@ -211,7 +222,17 @@ export default function Inbox({ initialConnectionId = '', onManage }) {
   useEffect(() => {
     const id = ++generation.current
     let active = true
+    if (!connections) return undefined
     async function load() {
+      if (!connectionId) {
+        // No mailbox connected: nothing to read.
+        setItems([])
+        setCursor(null)
+        setIssues([])
+        setSelected(null)
+        setLoading(false)
+        return
+      }
       setLoading(true)
       setError('')
       setItems([])
@@ -235,7 +256,7 @@ export default function Inbox({ initialConnectionId = '', onManage }) {
     return () => {
       active = false
     }
-  }, [scope, connectionId, reload])
+  }, [scope, connectionId, reload, connections])
 
   async function more() {
     const id = generation.current
@@ -260,23 +281,48 @@ export default function Inbox({ initialConnectionId = '', onManage }) {
     }
   }
 
+  const mailboxes = connections || []
+
   return (
     <section className="inbox-page" aria-label={tr('统一收件箱', 'Inbox')}>
+      {/* The mailbox is chosen first; the new-mail notices and the list below follow it. */}
+      {mailboxes.length > 1 && (
+        <div
+          className="segmented inbox-mailboxes"
+          role="tablist"
+          aria-label={tr('邮箱', 'Mailbox')}
+        >
+          {mailboxes.map((item) => {
+            const fresh = noticeCounts[item.id] || 0
+            return (
+              <button
+                type="button"
+                role="tab"
+                key={item.id}
+                aria-selected={item.id === connectionId}
+                aria-label={
+                  fresh
+                    ? tr(
+                        `${item.email_address}，${fresh} 封新邮件`,
+                        `${item.email_address}, ${fresh} new`,
+                      )
+                    : undefined
+                }
+                className={item.id === connectionId ? 'active' : ''}
+                onClick={() => setConnectionId(item.id)}
+              >
+                {item.email_address}
+                {fresh > 0 && <span className="inbox-mailbox-count">{fresh}</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {mailboxes.length === 1 && <p className="inbox-mailbox-name">{mailboxes[0].email_address}</p>}
       {/* New mail found by the background check, with summaries; moved here from the home page. */}
-      <NewMailNotice />
+      <NewMailNotice connectionId={connectionId} onCounts={setNoticeCounts} />
       <div className="mail-toolbar">
         <div className="inbox-filters">
-          <label>
-            {tr('邮箱', 'Mailbox')}
-            <select value={connectionId} onChange={(event) => setConnectionId(event.target.value)}>
-              <option value="">{tr('全部已连接邮箱', 'All connected mailboxes')}</option>
-              {connections.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.email_address}
-                </option>
-              ))}
-            </select>
-          </label>
           <label>
             {tr('邮件范围', 'Show')}
             <select value={scope} onChange={(event) => setScope(event.target.value)}>
@@ -290,7 +336,7 @@ export default function Inbox({ initialConnectionId = '', onManage }) {
         <button
           className="mail-secondary"
           onClick={() => setReload((value) => value + 1)}
-          disabled={loading}
+          disabled={loading || !connectionId}
         >
           <Icon name="refresh" size={16} />
           {tr('刷新', 'Refresh')}
@@ -298,8 +344,8 @@ export default function Inbox({ initialConnectionId = '', onManage }) {
       </div>
       <p className="mail-helper">
         {tr(
-          '按收到时间汇总，一次加载 20 封。已收邮件筛选不包含已发送、草稿、垃圾邮件和垃圾箱。',
-          'Sorted by time received, 20 at a time. “All received” excludes sent, drafts, spam and trash.',
+          '每个邮箱分开显示，按收到时间排列，一次加载 20 封。已收邮件筛选不包含已发送、草稿、垃圾邮件和垃圾箱。',
+          'Each mailbox has its own list, sorted by time received, 20 at a time. “All received” excludes sent, drafts, spam and trash.',
         )}
       </p>
       {error && (
@@ -312,7 +358,7 @@ export default function Inbox({ initialConnectionId = '', onManage }) {
       )}
       {issues.map((item) => (
         <div className="message error" role="status" key={item.connection_id}>
-          {connections.find((connection) => connection.id === item.connection_id)?.email_address ||
+          {mailboxes.find((connection) => connection.id === item.connection_id)?.email_address ||
             tr('部分邮箱', 'Some mailboxes')}
           {tr('：', ': ')}
           {item.message}
@@ -343,8 +389,6 @@ export default function Inbox({ initialConnectionId = '', onManage }) {
               </div>
               <strong>{mailText(item.subject)}</strong>
               <p>{item.snippet || tr('（暂无预览）', '(No preview)')}</p>
-              {/* Which mailbox only matters when more than one is connected. */}
-              {connections.length > 1 && <span className="mail-source">{item.mailbox}</span>}
             </button>
           ))}
           {loading && <Skeleton label={tr('正在读取邮件…', 'Loading mail…')} rows={5} />}
@@ -353,14 +397,14 @@ export default function Inbox({ initialConnectionId = '', onManage }) {
               <Icon name="mail" size={36} />
               <h2>{tr('暂无可显示的邮件', 'No mail to show')}</h2>
               <p>
-                {connections.length
+                {mailboxes.length
                   ? tr(
                       '当前筛选没有邮件，或邮箱需要重新授权。',
                       'No mail for these filters, or a mailbox needs reauthorizing.',
                     )
                   : tr(
-                      '先添加 Google 邮箱，再来查看收件箱。',
-                      'Add a Google mailbox first, then come back.',
+                      '先在邮箱管理中添加邮箱，再来查看收件箱。',
+                      'Add a mailbox in Mailboxes first, then come back.',
                     )}
               </p>
               <button className="mail-secondary" onClick={onManage}>

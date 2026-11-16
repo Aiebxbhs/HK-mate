@@ -135,7 +135,12 @@ function MessageDialog({ kind, notification, onClose }) {
   )
 }
 
-export default function NewMailNotice() {
+/**
+ * New mail found by the background check. With `connectionId` only that mailbox's notices are
+ * shown; `onCounts` receives the number of notices per mailbox ({ connectionId: count }) so the
+ * page can label its mailbox tabs.
+ */
+export default function NewMailNotice({ connectionId = '', onCounts }) {
   const [expanded, setExpanded] = useState(false)
   const [data, setData] = useState(null)
   const [messages, setMessages] = useState([])
@@ -145,6 +150,10 @@ export default function NewMailNotice() {
   const [busy, setBusy] = useState([])
   const [preview, setPreview] = useState(null)
   const previousCount = useRef(0)
+  const reportCounts = useRef(onCounts)
+  useEffect(() => {
+    reportCounts.current = onCounts
+  }, [onCounts])
 
   useEffect(() => {
     let active = true
@@ -172,7 +181,12 @@ export default function NewMailNotice() {
           cursor = page.next_cursor
         }
         if (!active) return
-        setMessages([...new Map(all.map((item) => [item.id, item])).values()])
+        const unique = [...new Map(all.map((item) => [item.id, item])).values()]
+        setMessages(unique)
+        const counts = {}
+        for (const item of unique)
+          counts[item.connection_id] = (counts[item.connection_id] || 0) + 1
+        reportCounts.current?.(counts)
         setData(first)
         setError('')
         if (first.total_count > previousCount.current) setExpanded(true)
@@ -190,6 +204,7 @@ export default function NewMailNotice() {
             authorized = false
             setMessages([])
             setData(null)
+            reportCounts.current?.({})
           }
         }
       } finally {
@@ -232,10 +247,11 @@ export default function NewMailNotice() {
     }
   }
 
-  const count = data?.total_count || 0
-  const processing = messages.filter((item) =>
-    ['pending', 'processing'].includes(item.status),
-  ).length
+  const shown = connectionId
+    ? messages.filter((item) => item.connection_id === connectionId)
+    : messages
+  const count = connectionId ? shown.length : data?.total_count || 0
+  const processing = shown.filter((item) => ['pending', 'processing'].includes(item.status)).length
   if (count === 0) return null
 
   return (
@@ -320,9 +336,9 @@ export default function NewMailNotice() {
           {tr('（香港时间）', ' (Hong Kong time)')}
         </p>
       )}
-      {expanded && messages.length > 0 && (
+      {expanded && shown.length > 0 && (
         <ol id="new-mail-list" className="new-mail-list">
-          {messages.map((message) => (
+          {shown.map((message) => (
             <li key={message.id}>
               <article className="new-mail-card" aria-labelledby={`message-${message.id}`}>
                 <div className="new-mail-card-heading">

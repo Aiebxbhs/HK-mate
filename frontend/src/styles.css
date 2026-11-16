@@ -1775,6 +1775,41 @@ input::placeholder {
   font: inherit;
   color: var(--muted);
 }
+/* One tab per connected mailbox; long addresses wrap onto further rows on a phone. */
+.inbox-mailboxes {
+  flex-wrap: wrap;
+  border-radius: 18px;
+  max-width: 100%;
+}
+.inbox-mailboxes {
+  display: flex;
+  width: fit-content;
+  margin-bottom: 16px;
+}
+.inbox-mailboxes button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  overflow-wrap: anywhere;
+}
+/* New mail waiting in that mailbox. */
+.inbox-mailbox-count {
+  min-width: 19px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+}
+.inbox-mailbox-name {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
 .inbox-layout {
   display: grid;
   gap: 20px;
