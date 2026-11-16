@@ -1,63 +1,23 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
 import Icon from '../components/Icon'
 import LectureSummaryView from '../components/LectureSummaryView'
-import { startLectureStream } from '../components/lecture-stream'
+import {
+  LectureSessionProvider,
+  recordedSeconds,
+  useLectureSession,
+} from '../components/LectureSession'
+import { listMicrophones, readMicSettings, writeMicSettings } from '../components/lecture-stream'
 import { formatDuration, formatElapsed, hkClock } from '../components/lecture-time'
 import { tr } from '../i18n'
 
-// In-progress lectures are kept only in this browser (per account) until the user saves or
-// discards them, so a refresh or an accidental close does not lose notes.
-const draftKey = (userId) => `hkmate.lecture.draft.${userId}`
-
 const consentKey = (userId) => `hkmate.lecture.consent.${userId}`
-
-function readDraft(userId) {
-  try {
-    const value = JSON.parse(localStorage.getItem(draftKey(userId)) || 'null')
-    if (!value?.startedAt) return null
-    const captions = (value.captions || []).map((caption) =>
-      caption.status === 'pending' ? { ...caption, status: 'failed' } : caption,
-    )
-    // A segment left open by a closed tab ends where its last caption ended.
-    const segments = (value.segments || []).map((segment) => {
-      if (segment.endedAt) return segment
-      const last = captions.filter((caption) => caption.segment === segment.index).at(-1)
-      const end = last
-        ? Date.parse(value.startedAt) + (last.at_seconds + last.duration) * 1000
-        : Date.parse(segment.startedAt)
-      return { ...segment, endedAt: new Date(end).toISOString() }
-    })
-    return { notes: [], ...value, captions, segments }
-  } catch {
-    return null
-  }
-}
 
 function hasConsent(userId) {
   try {
     return localStorage.getItem(consentKey(userId)) === '1'
   } catch {
     return false
-  }
-}
-
-function recordedSeconds(segments, now = Date.now()) {
-  return segments.reduce(
-    (total, segment) =>
-      total +
-      ((segment.endedAt ? Date.parse(segment.endedAt) : now) - Date.parse(segment.startedAt)) /
-        1000,
-    0,
-  )
-}
-
-function writeDraft(userId, draft) {
-  try {
-    if (draft) localStorage.setItem(draftKey(userId), JSON.stringify(draft))
-    else localStorage.removeItem(draftKey(userId))
-  } catch {
-    // Local recovery is a convenience; the lecture still works without it.
   }
 }
 
@@ -421,6 +381,76 @@ function SaveForm({ draft, courseNames, busy, onSummary, onBack, onSaved, onDisc
   )
 }
 
+/**
+ * Which microphone to use and whether the browser may clean the sound up. Kept in this
+ * browser; a change applies the next time recording starts.
+ */
+function MicSettings({ disabled, recState }) {
+  const [settings, setSettings] = useState(readMicSettings)
+  const [microphones, setMicrophones] = useState([])
+
+  // Device names only exist once the browser has microphone permission, so look again when
+  // recording starts or stops, and when something is plugged in.
+  useEffect(() => {
+    let active = true
+    const load = () =>
+      listMicrophones().then((list) => {
+        if (active) setMicrophones(list)
+      })
+    load()
+    const media = navigator.mediaDevices
+    media?.addEventListener?.('devicechange', load)
+    return () => {
+      active = false
+      media?.removeEventListener?.('devicechange', load)
+    }
+  }, [recState])
+
+  function change(next) {
+    setSettings(next)
+    writeMicSettings(next)
+  }
+
+  const known = microphones.some((item) => item.id === settings.deviceId)
+  return (
+    <fieldset className="lecture-mic" disabled={disabled}>
+      <legend className="sr-only">{tr('收音设置', 'Microphone settings')}</legend>
+      {microphones.length > 0 && (
+        <label>
+          {tr('麦克风', 'Microphone')}
+          <select
+            value={known ? settings.deviceId : ''}
+            onChange={(event) => change({ ...settings, deviceId: event.target.value })}
+          >
+            <option value="">{tr('系统默认', 'System default')}</option>
+            {microphones.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <label className="lecture-mic-check">
+        <input
+          type="checkbox"
+          checked={settings.voiceProcessing}
+          onChange={(event) => change({ ...settings, voiceProcessing: event.target.checked })}
+        />
+        {tr('通话降噪', 'Call-style noise reduction')}
+      </label>
+      <p>
+        {disabled
+          ? tr('暂停录音后可以更改。', 'Pause recording to change these.')
+          : tr(
+              '老师离麦克风较远时不要开启降噪，否则声音会被当成背景削弱；戴耳麦或用领夹麦克风时可以开启。',
+              'Leave noise reduction off when the lecturer is far from the microphone, or the voice is treated as background. Turn it on with a headset or clip-on microphone.',
+            )}
+      </p>
+    </fieldset>
+  )
+}
+
 const stateLabels = () => ({
   off: tr('未在录音', 'Not recording'),
   connecting: tr('正在连接…', 'Connecting…'),
@@ -429,9 +459,28 @@ const stateLabels = () => ({
   stopping: tr('正在处理最后一句…', 'Finishing the last sentence…'),
 })
 
+/**
+ * Keeps a growing list inside the window: it may be as tall as the space between its own top
+ * and the bottom of the window (less `reserve` for what sits below it) and scrolls inside
+ * that, so new captions never push the page itself longer. For use in a layout effect that
+ * runs on every render, because banners and the settings row above can move the list's top.
+ */
+function keepInWindow(getElement, reserve) {
+  const fit = () => {
+    const element = getElement()
+    if (!element) return
+    const top = element.getBoundingClientRect().top + window.scrollY
+    element.style.maxHeight = `${Math.max(220, window.innerHeight - top - reserve)}px`
+  }
+  fit()
+  window.addEventListener('resize', fit)
+  return () => window.removeEventListener('resize', fit)
+}
+
 function Captions({ captions, interim, recState, level }) {
   const list = useRef(null)
   const follow = useRef(true)
+  useLayoutEffect(() => keepInWindow(() => list.current, 44))
   useEffect(() => {
     const element = list.current
     if (element && follow.current) element.scrollTop = element.scrollHeight
@@ -500,34 +549,53 @@ function Captions({ captions, interim, recState, level }) {
   )
 }
 
-export default function LectureLive({ user, onOpenRecords }) {
-  const [draft, setDraft] = useState(() => readDraft(user.id))
-  const [restored, setRestored] = useState(() => Boolean(readDraft(user.id)))
+/**
+ * In the app the lecture session is provided by Home, above the pages, so recording keeps
+ * going on other pages. Rendered alone, the page brings its own session.
+ */
+export default function LectureLive(props) {
+  const shared = useLectureSession()
+  const page = <LectureLivePage {...props} />
+  return shared ? page : <LectureSessionProvider user={props.user}>{page}</LectureSessionProvider>
+}
+
+function LectureLivePage({ user, onOpenRecords }) {
+  const {
+    draft,
+    setDraft,
+    restored,
+    recState,
+    level,
+    interim,
+    streamError,
+    startCourse,
+    startRecording: beginRecording,
+    pauseRecording,
+    endCourse,
+  } = useLectureSession()
   const [now, setNow] = useState(() => Date.now())
   const [noteText, setNoteText] = useState('')
   const [saved, setSaved] = useState(null)
   const [courseNames, setCourseNames] = useState([])
-  const [recState, setRecState] = useState('off')
-  const [level, setLevel] = useState(0)
-  // The sentence still being spoken; shown in grey, never saved.
-  const [interim, setInterim] = useState(null)
-  const [streamError, setStreamError] = useState('')
   const [askConsent, setAskConsent] = useState(false)
   const [confirmEnd, setConfirmEnd] = useState(false)
   const noteInput = useRef(null)
-  const recording = useRef(null)
+  const noteList = useRef(null)
+  // Leaves room for the note box and its button under the list.
+  useLayoutEffect(() => keepInWindow(() => noteList.current, 190))
+  const noteCount = draft?.notes.length ?? 0
+  // A new note is added at the end; keep it in view.
+  useEffect(() => {
+    const element = noteList.current
+    if (element) element.scrollTop = element.scrollHeight
+  }, [noteCount])
   const ending = Boolean(draft?.endedAt)
-
-  useEffect(() => writeDraft(user.id, draft), [user.id, draft])
 
   useEffect(() => {
     if (!draft || ending) return undefined
     const timer = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(timer)
   }, [draft, ending])
-
-  // Leaving the page always turns the microphone off.
-  useEffect(() => () => recording.current?.abort(), [])
 
   useEffect(() => {
     if (!ending) return
@@ -551,134 +619,18 @@ export default function LectureLive({ user, onOpenRecords }) {
 
   function start() {
     setSaved(null)
-    setRestored(false)
-    setStreamError('')
-    setDraft({ startedAt: new Date().toISOString(), notes: [], captions: [], segments: [] })
+    startCourse()
     setNow(Date.now())
     setTimeout(() => noteInput.current?.focus(), 0)
   }
 
-  function closeSegment(index) {
-    setDraft((current) =>
-      current
-        ? {
-            ...current,
-            segments: current.segments.map((segment) =>
-              segment.index === index && !segment.endedAt
-                ? { ...segment, endedAt: new Date().toISOString() }
-                : segment,
-            ),
-          }
-        : current,
-    )
-  }
-
-  async function startRecording() {
+  function startRecording() {
     if (!hasConsent(user.id)) {
       setAskConsent(true)
       return
     }
     setAskConsent(false)
-    setStreamError('')
-    setRestored(false)
-    setRecState('connecting')
-    const segmentStart = Date.now()
-    const offset = (segmentStart - Date.parse(draft.startedAt)) / 1000
-    const index = (draft.segments.at(-1)?.index ?? -1) + 1
-    setDraft((current) => ({
-      ...current,
-      segments: [...current.segments, { index, startedAt: new Date(segmentStart).toISOString() }],
-    }))
-    const updateCaption = (key, changes) =>
-      setDraft((current) =>
-        current
-          ? {
-              ...current,
-              captions: current.captions.map((caption) =>
-                caption.key === key ? { ...caption, ...changes } : caption,
-              ),
-            }
-          : current,
-      )
-    try {
-      recording.current = await startLectureStream({
-        onStatus: (state) => {
-          if (state === 'loading' || state === 'listening') setRecState(state)
-        },
-        onPartial: (message) =>
-          setInterim(
-            message.en
-              ? { en: message.en, at_seconds: Math.round((offset + message.offset) * 10) / 10 }
-              : null,
-          ),
-        onCaption: (message) => {
-          setInterim(null)
-          setDraft((current) =>
-            current
-              ? {
-                  ...current,
-                  captions: [
-                    ...current.captions,
-                    {
-                      key: `${index}-${message.id}`,
-                      segment: index,
-                      at_seconds: Math.round((offset + message.offset) * 10) / 10,
-                      duration: message.duration,
-                      en: message.en,
-                      zh: null,
-                      status: 'pending',
-                    },
-                  ],
-                }
-              : current,
-          )
-        },
-        onTranslation: (message) =>
-          updateCaption(`${index}-${message.id}`, {
-            zh: message.zh,
-            status: message.zh ? 'done' : 'failed',
-          }),
-        onLevel: setLevel,
-        onError: (message) => {
-          setStreamError(message)
-          setInterim(null)
-          closeSegment(index)
-        },
-        onClosed: () => {
-          recording.current = null
-          setInterim(null)
-          closeSegment(index)
-          setRecState('off')
-          setLevel(0)
-        },
-      })
-    } catch (cause) {
-      setStreamError(cause.message)
-      setRecState('off')
-      setDraft((current) => ({
-        ...current,
-        segments: current.segments.filter((segment) => segment.index !== index),
-      }))
-    }
-  }
-
-  function pauseRecording() {
-    const handle = recording.current
-    if (!handle) return
-    setRecState('stopping')
-    // Recording time ends now; captions for the last sentence may still arrive.
-    setDraft((current) => ({
-      ...current,
-      segments: current.segments.map((segment) =>
-        segment.endedAt ? segment : { ...segment, endedAt: new Date().toISOString() },
-      ),
-    }))
-    handle.stop()
-  }
-
-  function endCourse() {
-    if (recording.current) pauseRecording()
-    setDraft((current) => ({ ...current, endedAt: new Date().toISOString() }))
+    beginRecording()
   }
 
   function addNote(event) {
@@ -861,6 +813,7 @@ export default function LectureLive({ user, onOpenRecords }) {
           )}
         </div>
       </div>
+      <MicSettings disabled={active} recState={recState} />
       {askConsent && (
         <div
           className="agenda-card lecture-consent"
@@ -902,7 +855,7 @@ export default function LectureLive({ user, onOpenRecords }) {
             <span>{tr(`${draft.notes.length} 条`, draft.notes.length)}</span>
           </h2>
           {draft.notes.length ? (
-            <ol className="lecture-note-list">
+            <ol ref={noteList} className="lecture-note-list">
               {draft.notes.map((note) => (
                 <NoteItem
                   key={note.id}

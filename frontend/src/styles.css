@@ -491,6 +491,65 @@ input::placeholder {
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+.header-end {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: end;
+  min-width: 0;
+}
+/* Lecture in progress, shown on every other page; leads back to the captions. */
+.lecture-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 13px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.lecture-indicator:hover {
+  background: var(--surface-2);
+}
+.lecture-indicator-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+.lecture-indicator.is-recording {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  color: var(--accent-ink);
+}
+.lecture-indicator.is-recording .lecture-indicator-dot {
+  background: var(--danger);
+  animation: lecture-indicator-pulse 1.6s ease-in-out infinite;
+}
+.lecture-indicator.is-stopped {
+  border-color: var(--danger);
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+.lecture-indicator.is-stopped .lecture-indicator-dot {
+  background: var(--danger);
+}
+@keyframes lecture-indicator-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lecture-indicator.is-recording .lecture-indicator-dot {
+    animation: none;
+  }
+}
 .account-menu {
   position: relative;
   justify-self: end;
@@ -2888,6 +2947,45 @@ input::placeholder {
   flex-wrap: wrap;
   gap: 10px;
 }
+/* Microphone choice and noise reduction, under the lecture bar. */
+.lecture-mic {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding: 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.lecture-mic label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.lecture-mic select {
+  max-width: 240px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+.lecture-mic input {
+  width: auto;
+  height: auto;
+  margin: 0;
+}
+.lecture-mic p {
+  flex: 1 1 260px;
+  margin: 0;
+  line-height: 1.6;
+}
 .lecture-end,
 .lecture-end:hover:not(:disabled) {
   background: var(--danger-tint);
@@ -2899,6 +2997,25 @@ input::placeholder {
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
+}
+/* During a lecture the page header shrinks so captions and notes get the window's height;
+   both lists scroll inside themselves (useFitWindow in LectureLive.jsx). */
+.home-main:has(.lecture-columns) {
+  padding-top: 22px;
+  padding-bottom: 24px;
+}
+.home-main:has(.lecture-columns) .home-greeting h1 {
+  margin: 4px 0;
+  font-size: 26px;
+}
+.home-main:has(.lecture-columns) .home-greeting > p {
+  display: none;
+}
+.home-main:has(.lecture-columns) .section-tabs {
+  margin-top: 12px;
+}
+.home-main:has(.lecture-columns) .lecture-page {
+  margin-top: 16px;
 }
 .lecture-captions-empty {
   display: grid;

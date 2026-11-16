@@ -7,6 +7,7 @@ import PasswordChange from '../components/PasswordChange'
 import TodayHongKong from '../components/TodayHongKong'
 import Calendar from './Calendar'
 import Compose from './Compose'
+import { LectureIndicator, LectureSessionProvider } from '../components/LectureSession'
 import LectureLive from './LectureLive'
 import HkuGuide from './HkuGuide'
 import Timetable from './Timetable'
@@ -333,7 +334,17 @@ function AccountMenu({ user, current, busy, onAccount, onLogout }) {
   )
 }
 
-export default function Home({ user, onUser, onLogout, sessionError, onRetry }) {
+// The lecture session sits above every page, so recording and captions continue while the
+// inbox or the schedule is open; it ends with the signed-in session.
+export default function Home(props) {
+  return (
+    <LectureSessionProvider key={props.user.id} user={props.user}>
+      <HomeShell {...props} />
+    </LectureSessionProvider>
+  )
+}
+
+function HomeShell({ user, onUser, onLogout, sessionError, onRetry }) {
   const { t } = useLanguage()
   const { sections, guidePages } = navigation()
   const [callbackStatus] = useState(() => new URLSearchParams(location.search).get('gmail'))
@@ -483,13 +494,16 @@ export default function Home({ user, onUser, onLogout, sessionError, onRetry }) 
             )
           })}
         </nav>
-        <AccountMenu
-          user={user}
-          current={page === 'account'}
-          busy={busy}
-          onAccount={() => navigate('account')}
-          onLogout={logout}
-        />
+        <div className="header-end">
+          {page !== 'lecture-live' && <LectureIndicator onOpen={() => navigate('lecture-live')} />}
+          <AccountMenu
+            user={user}
+            current={page === 'account'}
+            busy={busy}
+            onAccount={() => navigate('account')}
+            onLogout={logout}
+          />
+        </div>
       </header>
       <main className="home-main" key={page} data-direction={direction}>
         {(error || sessionError) && (
