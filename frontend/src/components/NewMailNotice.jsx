@@ -79,55 +79,58 @@ function MessageDialog({ kind, notification, onClose }) {
         onClose()
       }}
     >
-      <div className="preview-dialog-heading">
-        <span className="home-preview-label">
-          {kind === 'mail'
-            ? tr('原邮件 · 只读', 'Original email · read-only')
-            : kind === 'reply'
-              ? tr('起草回复', 'Draft a reply')
-              : tr('加入日程', 'Add to schedule')}
-        </span>
-        <button
-          type="button"
-          className="sidebar-close"
-          aria-label={tr('关闭邮件窗口', 'Close')}
-          onClick={onClose}
-        >
-          <Icon name="close" size={19} />
-        </button>
-      </div>
-      <h2 id="notification-dialog-title">{mailText(notification.subject)}</h2>
-      <p className="preview-dialog-meta">
-        {mailText(notification.sender)} · {notification.mailbox}
-      </p>
-      {kind === 'mail' ? (
-        error ? (
-          <p className="message error" role="alert">
-            {error}
-          </p>
-        ) : mail ? (
-          <>
-            <div className="mail-body-text">{mailText(mail.body)}</div>
-            {mail.attachments.length > 0 && (
-              <p className="preview-dialog-note">
-                {tr(
-                  `附件：${mail.attachments.join('、')}（未下载）`,
-                  `Attachments: ${mail.attachments.join(', ')} (not downloaded)`,
-                )}
-              </p>
-            )}
-          </>
+      {/* Outside the scrolling card, so it stays in reach at the end of a long email. */}
+      <button
+        type="button"
+        className="preview-dialog-close"
+        aria-label={tr('关闭邮件窗口', 'Close')}
+        onClick={onClose}
+      >
+        <Icon name="close" size={19} />
+      </button>
+      <div className="preview-dialog-card">
+        <div className="preview-dialog-heading">
+          <span className="home-preview-label">
+            {kind === 'mail'
+              ? tr('原邮件 · 只读', 'Original email · read-only')
+              : kind === 'reply'
+                ? tr('起草回复', 'Draft a reply')
+                : tr('加入日程', 'Add to schedule')}
+          </span>
+        </div>
+        <h2 id="notification-dialog-title">{mailText(notification.subject)}</h2>
+        <p className="preview-dialog-meta">
+          {mailText(notification.sender)} · {notification.mailbox}
+        </p>
+        {kind === 'mail' ? (
+          error ? (
+            <p className="message error" role="alert">
+              {error}
+            </p>
+          ) : mail ? (
+            <>
+              <div className="mail-body-text">{mailText(mail.body)}</div>
+              {mail.attachments.length > 0 && (
+                <p className="preview-dialog-note">
+                  {tr(
+                    `附件：${mail.attachments.join('、')}（未下载）`,
+                    `Attachments: ${mail.attachments.join(', ')} (not downloaded)`,
+                  )}
+                </p>
+              )}
+            </>
+          ) : (
+            <Skeleton label={tr('正在读取原邮件…', 'Loading email…')} rows={5} variant="text" />
+          )
+        ) : kind === 'reply' ? (
+          <ReplyDraftPanel
+            connectionId={notification.connection_id}
+            messageId={notification.message_id}
+          />
         ) : (
-          <Skeleton label={tr('正在读取原邮件…', 'Loading email…')} rows={5} variant="text" />
-        )
-      ) : kind === 'reply' ? (
-        <ReplyDraftPanel
-          connectionId={notification.connection_id}
-          messageId={notification.message_id}
-        />
-      ) : (
-        <ScheduleFromMail onClose={onClose} />
-      )}
+          <ScheduleFromMail onClose={onClose} />
+        )}
+      </div>
     </dialog>
   )
 }

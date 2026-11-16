@@ -1410,16 +1410,52 @@ input::placeholder {
 .mail-preview-ignore:hover {
   color: var(--ink);
 }
+/* The dialog is only a frame: the card inside scrolls, and the close button sits outside the
+   card's corner so it stays in reach however long the email is. */
 .home-preview-dialog {
   width: min(460px, calc(100vw - 40px));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  color: var(--ink-2);
+}
+.preview-dialog-card {
   max-height: 85svh;
   overflow: auto;
   padding: 26px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--surface);
-  color: var(--ink-2);
   box-shadow: 0 25px 80px rgba(42, 39, 36, 0.14);
+}
+.preview-dialog-close {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 12px);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: 0 8px 24px rgba(42, 39, 36, 0.14);
+}
+.preview-dialog-close:hover {
+  background: var(--surface-2);
+}
+/* No room beside the card: the button goes above its right corner. */
+@media (max-width: 740px) {
+  .preview-dialog-card {
+    max-height: min(85svh, calc(100svh - 124px));
+  }
+  .preview-dialog-close {
+    top: -52px;
+    left: auto;
+    right: 0;
+  }
 }
 .home-preview-dialog::backdrop {
   background: rgba(42, 39, 36, 0.27);
