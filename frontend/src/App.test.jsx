@@ -68,8 +68,8 @@ describe('account pages', () => {
       within(navigation)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['今天', '日程', '邮件', '课堂翻译', 'HKU 指南'])
-    expect(within(navigation).getByRole('button', { name: '今天' })).toHaveAttribute(
+    ).toEqual(['主页', '日程', '邮件', '课堂翻译', 'HKU 指南'])
+    expect(within(navigation).getByRole('button', { name: '主页' })).toHaveAttribute(
       'aria-current',
       'page',
     )
@@ -171,7 +171,7 @@ describe('account pages', () => {
     const user = userEvent.setup()
     expect(await screen.findByRole('heading', { level: 1, name: '账号信息' })).toBeVisible()
     expect(screen.getByRole('button', { name: '账号菜单' })).toHaveClass('active')
-    await user.click(screen.getByRole('button', { name: '今天' }))
+    await user.click(screen.getByRole('button', { name: '主页' }))
     expect(
       await screen.findByRole('heading', { name: /(早上好|下午好|晚上好)，测试同学/ }),
     ).toBeVisible()

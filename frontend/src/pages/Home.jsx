@@ -124,7 +124,7 @@ function navigation() {
   ]
   // Top-level navigation: the same five places on desktop (top bar) and phone (tab bar).
   const sections = [
-    { id: 'overview', label: tr('今天', 'Today'), icon: 'grid', pages: [{ id: 'overview' }] },
+    { id: 'overview', label: tr('主页', 'Home'), icon: 'grid', pages: [{ id: 'overview' }] },
     { id: 'schedule', label: tr('日程', 'Schedule'), icon: 'calendar', pages: schedulePages },
     { id: 'mail', label: tr('邮件', 'Mail'), icon: 'mail', pages: mailboxPages },
     {
