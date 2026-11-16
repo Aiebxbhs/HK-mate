@@ -25,13 +25,65 @@ function micError(name) {
   )
 }
 
+// Microphone choices are kept in this browser: they describe this computer, not the account.
+const MIC_SETTINGS_KEY = 'hkmate.lecture.mic'
+
+/** { deviceId: '' (system default) or a device id, voiceProcessing: boolean }. */
+export function readMicSettings() {
+  try {
+    const value = JSON.parse(localStorage.getItem(MIC_SETTINGS_KEY) || '{}')
+    return {
+      deviceId: typeof value.deviceId === 'string' ? value.deviceId : '',
+      voiceProcessing: value.voiceProcessing === true,
+    }
+  } catch {
+    return { deviceId: '', voiceProcessing: false }
+  }
+}
+
+export function writeMicSettings(settings) {
+  try {
+    localStorage.setItem(MIC_SETTINGS_KEY, JSON.stringify(settings))
+  } catch {
+    // Without storage the defaults are used next time.
+  }
+}
+
+/** Microphones the browser can name; empty until microphone permission has been granted. */
+export async function listMicrophones(media = navigator.mediaDevices) {
+  try {
+    const devices = await media.enumerateDevices()
+    return devices
+      .filter((device) => device.kind === 'audioinput' && device.deviceId && device.label)
+      .map((device) => ({ id: device.deviceId, label: device.label }))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * The browser's noise suppression and echo cancellation are made for a voice close to the
+ * microphone; they treat a lecturer across the room as background and thin the voice out. So
+ * they are off unless the user asks for them (headset or clip-on microphone). Automatic gain
+ * stays on: quiet speech is lifted, and the server's pause detection works on absolute levels.
+ */
+function audioConstraints({ deviceId, voiceProcessing }) {
+  return {
+    channelCount: 1,
+    echoCancellation: Boolean(voiceProcessing),
+    noiseSuppression: Boolean(voiceProcessing),
+    autoGainControl: true,
+    ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+  }
+}
+
 /**
  * Starts recording and streaming. Handlers: onStatus(state), onPartial(msg) (the unfinished
  * sentence so far, or en: null to clear it), onCaption(msg), onTranslation(msg),
- * onLevel(0..1), onError(message), onClosed().
+ * onLevel(0..1), onError(message), onClosed(). `settings` is what readMicSettings() returns.
  * Returns { stop } which stops the microphone and lets pending captions finish.
  */
-export async function startLectureStream(handlers, deps = {}) {
+export async function startLectureStream(handlers, deps = {}, settings = {}) {
   const media = deps.mediaDevices ?? navigator.mediaDevices
   const makeContext = deps.makeContext ?? ((options) => new AudioContext(options))
   const makeSocket = deps.makeSocket ?? ((url) => new WebSocket(url))
@@ -40,14 +92,16 @@ export async function startLectureStream(handlers, deps = {}) {
 
   let stream
   try {
-    stream = await media.getUserMedia({
-      audio: {
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    })
+    try {
+      stream = await media.getUserMedia({ audio: audioConstraints(settings) })
+    } catch (cause) {
+      // The chosen microphone was unplugged: use the system default instead of failing.
+      const gone = cause?.name === 'OverconstrainedError' || cause?.name === 'NotFoundError'
+      if (!settings.deviceId || !gone) throw cause
+      stream = await media.getUserMedia({
+        audio: audioConstraints({ ...settings, deviceId: '' }),
+      })
+    }
   } catch (cause) {
     throw new Error(micError(cause?.name), { cause })
   }

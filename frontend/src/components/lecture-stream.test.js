@@ -1,5 +1,11 @@
 import { expect, it, vi } from 'vitest'
-import { startLectureStream, streamUrl } from './lecture-stream'
+import {
+  listMicrophones,
+  readMicSettings,
+  startLectureStream,
+  streamUrl,
+  writeMicSettings,
+} from './lecture-stream'
 
 function fakes({ micError } = {}) {
   const track = { stop: vi.fn() }
@@ -52,7 +58,10 @@ it('streams audio only after the server is listening, and stops the microphone',
   expect(deps.makeContext).toHaveBeenCalledWith({ sampleRate: 16000 })
   expect(deps.mediaDevices.getUserMedia.mock.calls[0][0].audio).toMatchObject({
     channelCount: 1,
-    echoCancellation: true,
+    // Classroom pickup: the browser must not treat a distant lecturer as background noise.
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: true,
   })
   const frame = new ArrayBuffer(3200)
   node.port.onmessage({ data: { pcm: frame, level: 0.05 } })
@@ -94,4 +103,45 @@ it('turns microphone and server errors into readable messages', async () => {
   })
   expect(onError).toHaveBeenCalledWith('未找到 Whisper 模型')
   expect(track.stop).toHaveBeenCalled()
+})
+
+it('uses the chosen microphone and noise reduction, falling back when it is unplugged', async () => {
+  localStorage.clear()
+  expect(readMicSettings()).toEqual({ deviceId: '', voiceProcessing: false })
+  writeMicSettings({ deviceId: 'usb-1', voiceProcessing: true })
+  expect(readMicSettings()).toEqual({ deviceId: 'usb-1', voiceProcessing: true })
+  localStorage.setItem('hkmate.lecture.mic', 'not json')
+  expect(readMicSettings()).toEqual({ deviceId: '', voiceProcessing: false })
+
+  const { deps } = fakes()
+  await startLectureStream({}, deps, { deviceId: 'usb-1', voiceProcessing: true })
+  expect(deps.mediaDevices.getUserMedia.mock.calls[0][0].audio).toMatchObject({
+    deviceId: { exact: 'usb-1' },
+    echoCancellation: true,
+    noiseSuppression: true,
+  })
+
+  const unplugged = fakes()
+  unplugged.deps.mediaDevices.getUserMedia
+    .mockRejectedValueOnce(Object.assign(new Error('gone'), { name: 'OverconstrainedError' }))
+    .mockResolvedValueOnce({ getTracks: () => [unplugged.track] })
+  await startLectureStream({}, unplugged.deps, { deviceId: 'usb-1', voiceProcessing: false })
+  const second = unplugged.deps.mediaDevices.getUserMedia.mock.calls[1][0].audio
+  expect(second.deviceId).toBeUndefined()
+  expect(second.noiseSuppression).toBe(false)
+})
+
+it('lists only microphones the browser can name', async () => {
+  const media = {
+    enumerateDevices: vi.fn().mockResolvedValue([
+      { kind: 'audioinput', deviceId: 'usb-1', label: 'USB Microphone' },
+      { kind: 'audioinput', deviceId: '', label: '' }, // before permission is granted
+      { kind: 'videoinput', deviceId: 'cam', label: 'Camera' },
+    ]),
+  }
+  expect(await listMicrophones(media)).toEqual([{ id: 'usb-1', label: 'USB Microphone' }])
+  expect(await listMicrophones(undefined)).toEqual([])
+  expect(
+    await listMicrophones({ enumerateDevices: () => Promise.reject(new Error('no')) }),
+  ).toEqual([])
 })

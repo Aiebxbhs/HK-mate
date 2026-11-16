@@ -4,7 +4,10 @@ import LectureLive from './LectureLive'
 import { api } from '../api/client'
 import { startLectureStream } from '../components/lecture-stream'
 
-vi.mock('../components/lecture-stream', () => ({ startLectureStream: vi.fn() }))
+vi.mock('../components/lecture-stream', async (original) => ({
+  ...(await original()),
+  startLectureStream: vi.fn(),
+}))
 
 vi.mock('../api/client', () => ({
   api: { lectureRecords: vi.fn(), createLectureRecord: vi.fn(), lectureSummary: vi.fn() },
