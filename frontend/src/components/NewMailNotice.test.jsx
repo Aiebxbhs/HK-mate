@@ -253,3 +253,25 @@ it('prefers the stored label, which can arrive before the summary', async () => 
   expect(screen.getByText('账单与账户')).toBeVisible()
   expect(screen.queryByText('分类中')).not.toBeInTheDocument()
 })
+
+it('shows only the chosen mailbox’s notices and reports the count of every mailbox', async () => {
+  const other = { ...ready, id: 'notification-other', connection_id: 'connection-other' }
+  const second = { ...ready, id: 'notification-second', subject: 'Second synthetic mail' }
+  api.notifications.mockResolvedValue({
+    ...empty,
+    connection_count: 2,
+    total_count: 3,
+    items: [ready, other, second],
+  })
+  const onCounts = vi.fn()
+  const { rerender } = render(<NewMailNotice connectionId="connection-other" onCounts={onCounts} />)
+  expect(await screen.findByRole('heading', { name: '1 封新邮件' })).toBeVisible()
+  expect(screen.getAllByRole('article')).toHaveLength(1)
+  expect(onCounts).toHaveBeenLastCalledWith({ 'connection-test': 2, 'connection-other': 1 })
+  rerender(<NewMailNotice connectionId="connection-test" onCounts={onCounts} />)
+  expect(screen.getByRole('heading', { name: '2 封新邮件' })).toBeVisible()
+  expect(screen.getByText('Second synthetic mail')).toBeVisible()
+  // A mailbox with nothing new shows no notice block at all.
+  rerender(<NewMailNotice connectionId="connection-quiet" onCounts={onCounts} />)
+  expect(screen.queryByRole('heading', { name: /封新邮件/ })).toBeNull()
+})

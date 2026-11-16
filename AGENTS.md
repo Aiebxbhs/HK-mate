@@ -26,6 +26,7 @@
 - 当前数据库与认证：SQLite + SQLAlchemy + Alembic，服务端会话 + HttpOnly Cookie；注册登录、退出及会话恢复已实现。
 - 前端：React JavaScript + Vite，项目内 Node 24，npm 管理依赖。
 - 邮箱：Gmail API + OAuth，只申请 gmail.readonly；邮箱管理与统一收件箱已实现，首次真实授权由用户完成。
+- 统一收件箱按邮箱分开显示（2026-11-16 按用户要求）：连接多个邮箱时每个邮箱一个标签页，各自列表，不再混排，也没有“全部邮箱”选项；只连接一个邮箱时不显示标签。邮箱标签在页面最上方，标签上的数字是该邮箱的新邮件通知数，新邮件通知只显示当前邮箱的（导航“邮件”旁仍是全部邮箱的总数）。后端 `GET /api/v1/messages` 不带 `connection_id` 时仍可合并返回，页面不再这样调用。
 - 网易邮箱（163 / 126 / yeah.net，2026-11-16）：IMAP + 客户端授权码，`backend/app/netease.py`，只读打开收件箱，约 60 秒检测一次，授权码加密保存（`provider = netease`，无新迁移）；网易不提供只读授权码，只读由程序只发读取命令保证；已用真实 163 邮箱验证（2026-11-16），见 `docs/NETEASE_MAIL.md`。
 - 邮件摘要：原生 Ollama 0.40.16 + Qwen3 4B Instruct 2507 Q4_K_M，仅本机推理；部署与真实邮件测试见 `docs/LOCAL_MODEL.md`。
 - 待定：后续公网交付方式。
