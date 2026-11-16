@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import Icon from './Icon'
-import { PLACEHOLDER, gmailComposeUrl } from './ReplyDraftPanel'
+import { PLACEHOLDER, composeTarget } from './ReplyDraftPanel'
 import { tr } from '../i18n'
 
 const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/
@@ -168,11 +168,11 @@ export function EmailDraftCard({ card }) {
         {from && toValid ? (
           <a
             className="mail-primary"
-            href={gmailComposeUrl({ mailbox: from, to: to.trim(), subject, body })}
+            href={composeTarget({ mailbox: from, to: to.trim(), subject, body }).href}
             target="_blank"
             rel="noopener noreferrer"
           >
-            {tr('在 Gmail 中打开', 'Open in Gmail')}
+            {composeTarget({ mailbox: from, to: to.trim(), subject, body }).label}
           </a>
         ) : (
           <span className="agent-card-hint">

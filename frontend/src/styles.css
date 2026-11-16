@@ -1560,6 +1560,44 @@ input::placeholder {
   font-size: 17px;
   font-weight: 650;
 }
+/* 163 / 126 connection: steps to get the authorization code, then the two fields. */
+.netease-form {
+  display: grid;
+  gap: 6px;
+  max-width: 560px;
+  margin: 4px 0 18px;
+  padding: 22px 24px;
+  animation: mail-arrive 0.25s ease-out;
+}
+.netease-form h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.netease-form ol {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--ink-2);
+}
+.netease-form label {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.netease-form input {
+  font-size: 14px;
+  height: 42px;
+}
+.netease-form .field-help {
+  margin: 4px 0 8px;
+}
+.netease-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
 .mail-helper {
   font-size: 13px;
   line-height: 1.9;

@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 
+from app import system_notify
 from app.agent.api import RateLimiter
 from app.agent.api import router as agent_router
 from app.agent.models import create_model
@@ -114,6 +115,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.summary_lock,
         # Live captions come first; background summaries wait until recording stops.
         paused=app.state.live_lectures.active,
+        notifier=system_notify.notify if settings.system_notifications else None,
     )
 
     @app.middleware("http")

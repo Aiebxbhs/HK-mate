@@ -10,11 +10,12 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app import mail_categories
+from app import mail_categories, netease
 from app.core.security import hash_token
 from app.gmail import GoogleMailbox, TokenVault, detail, summary
 from app.mail_schemas import ConnectionOutput, MailIssue, MailList, MailSummary
 from app.models import EmailConnection, LoginSession, MailOAuthState, MailPage
+from app.netease import NeteaseMailbox
 from app.services import AuthError
 
 
@@ -40,8 +41,63 @@ def owned(db: Session, user_id: str, connection_id: str) -> EmailConnection:
 
 
 class MailService:
-    def __init__(self, google: GoogleMailbox, vault: TokenVault):
+    def __init__(
+        self, google: GoogleMailbox, vault: TokenVault, netease_mail: NeteaseMailbox | None = None
+    ):
         self.google, self.vault = google, vault
+        self.netease = netease_mail or NeteaseMailbox()
+
+    def connect_netease(
+        self, db: Session, user_id: str, address: str, code: str
+    ) -> EmailConnection:
+        """Link a 163 / 126 / yeah.net mailbox after one successful read-only sign-in."""
+        existing = db.scalar(select(EmailConnection.id).limit(1))
+        self.vault.cipher(create=existing is None)
+        db.rollback()
+        token = netease.credentials(address, code)
+        self.netease.verify(token)
+        row = db.scalar(
+            select(EmailConnection).where(
+                EmailConnection.provider == netease.PROVIDER,
+                EmailConnection.email_address == address,
+            )
+        )
+        if row and row.user_id != user_id:
+            raise AuthError("MAILBOX_ALREADY_LINKED", "该邮箱已绑定其他平台账号，请先解绑。", 409)
+        if not row:
+            count = len(
+                list(
+                    db.scalars(select(EmailConnection.id).where(EmailConnection.user_id == user_id))
+                )
+            )
+            if count >= 5:
+                raise AuthError("MAILBOX_LIMIT", "当前最多连接 5 个邮箱。", 409)
+            row = EmailConnection(
+                id=str(uuid4()),
+                user_id=user_id,
+                provider=netease.PROVIDER,
+                email_address=address,
+                created_at=int(time.time()),
+            )
+        row.encrypted_credentials = self.vault.encrypt(token)
+        row.status = "connected"
+        db.add(row)
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise AuthError(
+                "MAILBOX_ALREADY_LINKED", "该邮箱已连接，请刷新邮箱管理。", 409
+            ) from None
+        return row
+
+    def reauthorize(self, db: Session, user_id: str, connection_id: str) -> None:
+        db.execute(
+            update(EmailConnection)
+            .where(EmailConnection.id == connection_id, EmailConnection.user_id == user_id)
+            .values(status="reauthorization_required")
+        )
+        db.commit()
 
     def authorize(self, db: Session, user_id: str, session_token: str) -> str:
         existing = db.scalar(select(EmailConnection.id).limit(1))
@@ -142,6 +198,9 @@ class MailService:
             raise AuthError("MAIL_REAUTHORIZE", "邮箱授权已失效，请重新连接。", 401)
         encrypted = row.encrypted_credentials
         db.rollback()
+        if row.provider == netease.PROVIDER:
+            # The authorization code is used as it is; there is nothing to refresh.
+            return row, self.vault.decrypt(encrypted)
         try:
             token, serialized = self.google.refresh(self.vault.decrypt(encrypted))
         except AuthError as exc:
@@ -169,6 +228,16 @@ class MailService:
 
     def disconnect(self, db: Session, user_id: str, connection_id: str) -> None:
         row = owned(db, user_id, connection_id)
+        if row.provider == netease.PROVIDER:
+            # No provider-side revocation exists; the user deletes the code in the web mailbox.
+            db.execute(delete(MailPage).where(MailPage.user_id == user_id))
+            db.execute(
+                delete(EmailConnection).where(
+                    EmailConnection.id == connection_id, EmailConnection.user_id == user_id
+                )
+            )
+            db.commit()
+            return
         credentials = json.loads(self.vault.decrypt(row.encrypted_credentials))
         row.status = "revocation_pending"
         db.execute(delete(MailPage).where(MailPage.user_id == user_id))
@@ -201,6 +270,7 @@ class MailService:
         if connection_id:
             rows = [owned(db, user_id, connection_id)]
         allowed = {row.id: row.email_address for row in rows}
+        providers = {row.id: row.provider for row in rows}
         if cursor:
             cached = db.scalar(
                 select(MailPage).where(
@@ -235,6 +305,15 @@ class MailService:
             try:
                 if key not in tokens:
                     _, tokens[key] = self.access(db, user_id, key)
+                if providers[key] == netease.PROVIDER:
+                    # One sign-in per page: the inbox only, whatever the scope.
+                    found, queue["next"] = self.netease.page(
+                        tokens[key], queue["next"], key, allowed[key]
+                    )
+                    queue["items"] = [item.model_dump(mode="json") for item in found]
+                    queue["started"] = True
+                    queue["done"] = not bool(queue["next"])
+                    return
                 # A bounded number of empty provider pages avoids an endless loop.
                 for _ in range(3):
                     page = self.google.page(tokens[key], queue["next"], scope)
@@ -262,12 +341,7 @@ class MailService:
                 failed.add(key)
                 issues.append(MailIssue(connection_id=key, message=exc.message))
                 if exc.code == "MAIL_REAUTHORIZE":
-                    db.execute(
-                        update(EmailConnection)
-                        .where(EmailConnection.id == key, EmailConnection.user_id == user_id)
-                        .values(status="reauthorization_required")
-                    )
-                    db.commit()
+                    self.reauthorize(db, user_id, key)
             except (ValueError, KeyError, TypeError):
                 failed.add(key)
                 issues.append(
@@ -327,17 +401,14 @@ class MailService:
     def message(self, db: Session, user_id: str, connection_id: str, message_id: str):
         row, token = self.access(db, user_id, connection_id)
         try:
+            if row.provider == netease.PROVIDER:
+                return self.netease.message(token, message_id, row.id, row.email_address)
             return detail(
                 self.google.message(token, message_id, full=True), row.id, row.email_address
             )
         except AuthError as exc:
             if exc.code == "MAIL_REAUTHORIZE":
-                db.execute(
-                    update(EmailConnection)
-                    .where(EmailConnection.id == connection_id, EmailConnection.user_id == user_id)
-                    .values(status="reauthorization_required")
-                )
-                db.commit()
+                self.reauthorize(db, user_id, connection_id)
             raise
         except (ValueError, KeyError, TypeError):
             raise AuthError(

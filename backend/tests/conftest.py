@@ -11,6 +11,8 @@ from fastapi.testclient import TestClient
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("HKM_AUTO_MAIL_ENABLED", "false")
+    # Tests must never raise real banners on the developer's screen.
+    monkeypatch.setenv("HKM_SYSTEM_NOTIFICATIONS", "false")
     database = tmp_path / "test.sqlite3"
     monkeypatch.setenv("HKM_DATABASE_PATH", str(database))
     command.upgrade(Config(str(ROOT / "alembic.ini")), "head")

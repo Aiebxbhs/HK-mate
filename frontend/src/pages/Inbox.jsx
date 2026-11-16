@@ -86,8 +86,8 @@ function MessageBody({ selected, onClose }) {
             )}
             <p className="mail-helper">
               {tr(
-                '以纯文本展示，不加载远程图片；读取不会将 Gmail 原邮件标记为已读。',
-                "Shown as plain text without remote images; reading here won't mark it as read in Gmail.",
+                '以纯文本展示，不加载远程图片；读取不会将原邮件标记为已读。',
+                "Shown as plain text without remote images; reading here won't mark it as read in your mailbox.",
               )}
             </p>
           </>

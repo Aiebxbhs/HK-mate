@@ -3,7 +3,7 @@ import { api } from '../api/client'
 import Icon from '../components/Icon'
 import {
   PLACEHOLDER,
-  gmailComposeUrl,
+  composeTarget,
   readSignature,
   saveSignature,
 } from '../components/ReplyDraftPanel'
@@ -128,7 +128,7 @@ export default function Compose() {
               autoComplete="email"
               value={to}
               maxLength={254}
-              placeholder={tr('只用于“在 Gmail 中打开”', 'Used only for “Open in Gmail”')}
+              placeholder={tr('只用于打开写信页面', 'Used only to open the draft for sending')}
               onChange={(event) => setTo(event.target.value)}
             />
           </label>
@@ -266,7 +266,7 @@ export default function Compose() {
                     </option>
                   ))
                 ) : (
-                  <option value="">{tr('尚未连接 Gmail', 'No Gmail connected')}</option>
+                  <option value="">{tr('尚未连接邮箱', 'No mailbox connected')}</option>
                 )}
               </select>
             </label>
@@ -295,20 +295,20 @@ export default function Compose() {
             {from && toValid ? (
               <a
                 className="mail-primary"
-                href={gmailComposeUrl({ mailbox: from, to: to.trim(), subject, body })}
+                href={composeTarget({ mailbox: from, to: to.trim(), subject, body }).href}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <Icon name="mail" size={16} aria-hidden="true" />
-                {tr('在 Gmail 中打开', 'Open in Gmail')}
+                {composeTarget({ mailbox: from, to: to.trim(), subject, body }).label}
               </a>
             ) : (
               <span className="reply-note-text">
                 {from
                   ? tr('请先改正收件人邮箱。', 'Fix the recipient address first.')
                   : tr(
-                      '在“邮箱管理”连接 Gmail 后，可在 Gmail 中打开。',
-                      'Connect Gmail in Mailboxes to open the draft in Gmail.',
+                      '在“邮箱管理”连接邮箱后，可直接打开写信页面。',
+                      'Connect a mailbox in Mailboxes to open the draft for sending.',
                     )}
               </span>
             )}
@@ -320,8 +320,8 @@ export default function Compose() {
           )}
           <p className="reply-note-text">
             {tr(
-              '草稿由本地模型生成，发送前请逐句核对，并在 Gmail 中确认收件人后自行发送。',
-              'Drafted by the local model. Check every sentence, confirm the recipient in Gmail, and send it yourself.',
+              '草稿由本地模型生成，发送前请逐句核对，确认收件人后自行发送。',
+              'Drafted by the local model. Check every sentence, confirm the recipient, and send it yourself.',
             )}
           </p>
         </section>

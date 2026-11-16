@@ -92,7 +92,7 @@ it('hides the Gmail link for a malformed address or when no mailbox is connected
   fireEvent.change(screen.getByLabelText('想写的内容和要点'), { target: { value: '约见导师' } })
   fireEvent.click(screen.getByRole('button', { name: '生成草稿' }))
   await screen.findByLabelText('正文')
-  expect(screen.getByText('在“邮箱管理”连接 Gmail 后，可在 Gmail 中打开。')).toBeVisible()
+  expect(screen.getByText('在“邮箱管理”连接邮箱后，可直接打开写信页面。')).toBeVisible()
   expect(screen.queryByRole('link', { name: '在 Gmail 中打开' })).not.toBeInTheDocument()
 })
 

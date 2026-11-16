@@ -32,6 +32,9 @@ def tr(text: str, language: str) -> str:
 
 
 EN: dict[str, str] = {
+    "新邮件，摘要未生成，请在 HK Mate 中查看。": (
+        "New mail. No summary yet; open HK Mate to read it."
+    ),
     # Accounts, sessions and request checks
     "尝试次数过多，请稍后再试。": "Too many attempts. Please try again later.",
     "无法使用这些信息注册，请尝试登录。": "Can't register with these details. Try signing in.",
@@ -157,14 +160,25 @@ EN: dict[str, str] = {
     "请先写下这封邮件要说的内容。": "Write what this email should say first.",
     "内容过长，超出本地模型可处理的长度。": "The content is too long for the local model.",
     # New mail notifications
-    "Gmail 授权已失效，请在邮箱管理中重新连接。": (
-        "Gmail access has expired. Reconnect it in Mailboxes."
+    "邮箱授权已失效，请在邮箱管理中重新连接。": (
+        "Mailbox access has expired. Reconnect it in Mailboxes."
     ),
+    "暂时无法读取网易邮箱，请稍后重试。": (
+        "Can't read the NetEase mailbox right now. Try again later."
+    ),
+    "网易邮箱授权码无效或已失效，请重新连接。": (
+        "The NetEase authorization code is wrong or no longer valid. Please reconnect."
+    ),
+    "网易邮箱拒绝了本次访问，请确认已在网页版开启 IMAP 服务后重试。": (
+        "NetEase refused this sign-in. Check that IMAP is turned on in the web mailbox, "
+        "then try again."
+    ),
+    "邮件不存在或已从邮箱移除。": "This message doesn't exist or was removed from the mailbox.",
     "本机邮箱加密密钥不可用，请检查或恢复密钥。": (
         "The local mailbox encryption key is unavailable. Check or restore it."
     ),
-    "Google 暂时限制了访问，系统会稍后重试。": (
-        "Google is limiting access for now; HK Mate will retry later."
+    "邮箱服务暂时限制了访问，系统会稍后重试。": (
+        "The mail provider is limiting access for now; HK Mate will retry later."
     ),
     "本地摘要生成超时，可以重试。": "The local summary timed out. You can retry.",
     "本地模型不可用，请启动 Ollama 后重试。": (

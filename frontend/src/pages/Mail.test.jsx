@@ -4,11 +4,13 @@ import userEvent from '@testing-library/user-event'
 import { api } from '../api/client'
 import Mailboxes from './Mailboxes'
 import Inbox from './Inbox'
+import { composeTarget } from '../components/ReplyDraftPanel'
 
 vi.mock('../api/client', () => ({
   api: {
     connections: vi.fn(),
     authorizeGoogle: vi.fn(),
+    connectNetease: vi.fn(),
     disconnectMailbox: vi.fn(),
     messages: vi.fn(),
     message: vi.fn(),
@@ -107,6 +109,37 @@ it('disables authorization when Google configuration is missing', async () => {
   render(<Mailboxes onInbox={vi.fn()} />)
   expect(await screen.findByText('还没有连接邮箱')).toBeVisible()
   expect(screen.getByRole('button', { name: '添加 Google 邮箱' })).toBeDisabled()
+})
+
+it('connects a 163 mailbox with an authorization code and checks the input first', async () => {
+  const user = userEvent.setup()
+  api.connections.mockResolvedValue({ items: [], google_configured: false })
+  api.connectNetease.mockResolvedValue({})
+  render(<Mailboxes onInbox={vi.fn()} />)
+  await user.click(await screen.findByRole('button', { name: '添加网易邮箱（163 / 126）' }))
+  await user.type(screen.getByLabelText('邮箱地址'), 'someone@example.com')
+  await user.type(screen.getByLabelText('授权码'), 'SYNTHETICCODE1234')
+  expect(screen.getByLabelText('授权码')).toHaveAttribute('type', 'password')
+  await user.click(screen.getByRole('button', { name: '连接' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('163.com')
+  expect(api.connectNetease).not.toHaveBeenCalled()
+  await user.clear(screen.getByLabelText('邮箱地址'))
+  await user.type(screen.getByLabelText('邮箱地址'), 'Synthetic@163.com')
+  await user.click(screen.getByRole('button', { name: '连接' }))
+  expect(api.connectNetease).toHaveBeenCalledWith('synthetic@163.com', 'SYNTHETICCODE1234')
+  expect(await screen.findByRole('status')).toHaveTextContent('网易邮箱已连接')
+  expect(screen.queryByLabelText('授权码')).toBeNull()
+})
+
+it('opens NetEase drafts in the mail app and Gmail drafts in Gmail', () => {
+  const draft = { to: 'to@example.com', subject: '主题 A', body: '正文 & more' }
+  const netease = composeTarget({ mailbox: 'me@163.com', ...draft })
+  expect(netease.href).toBe(
+    'mailto:to%40example.com?subject=%E4%B8%BB%E9%A2%98%20A&body=%E6%AD%A3%E6%96%87%20%26%20more',
+  )
+  expect(netease.label).toBe('在邮件 App 中打开')
+  const gmail = composeTarget({ mailbox: 'me@gmail.com', ...draft })
+  expect(gmail.href).toMatch(/^https:\/\/mail\.google\.com\/mail\/\?authuser=me%40gmail\.com/)
 })
 
 it('shows an authorization failure without pretending the mailbox was added', async () => {

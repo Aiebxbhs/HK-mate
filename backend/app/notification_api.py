@@ -24,9 +24,9 @@ router = APIRouter(
 
 def error_message(code: str) -> str:
     return {
-        "MAIL_REAUTHORIZE": "Gmail 授权已失效，请在邮箱管理中重新连接。",
+        "MAIL_REAUTHORIZE": "邮箱授权已失效，请在邮箱管理中重新连接。",
         "MAIL_KEY_UNAVAILABLE": "本机邮箱加密密钥不可用，请检查或恢复密钥。",
-        "MAIL_PROVIDER_LIMITED": "Google 暂时限制了访问，系统会稍后重试。",
+        "MAIL_PROVIDER_LIMITED": "邮箱服务暂时限制了访问，系统会稍后重试。",
         "SUMMARY_TIMEOUT": "本地摘要生成超时，可以重试。",
         "SUMMARY_LOCAL_SERVICE_UNAVAILABLE": "本地模型不可用，请启动 Ollama 后重试。",
         "SUMMARY_UNSUPPORTED_DEADLINE": "摘要中的截止时间未通过原文校验，请重试并核对原邮件。",

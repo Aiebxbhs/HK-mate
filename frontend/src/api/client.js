@@ -141,6 +141,11 @@ export const api = {
     mutate(`/calendar/events/${encodeURIComponent(id)}`, undefined, 'DELETE'),
   connections: () => request('/email-connections'),
   authorizeGoogle: () => mutate('/email-connections/google/authorize', {}),
+  connectNetease: (emailAddress, authorizationCode) =>
+    mutate('/email-connections/netease', {
+      email_address: emailAddress,
+      authorization_code: authorizationCode,
+    }),
   disconnectMailbox: (id) => mutate(`/email-connections/${encodeURIComponent(id)}`, {}, 'DELETE'),
   messages: ({ scope = 'inbox', connectionId = '', cursor = '' } = {}) => {
     const params = new URLSearchParams({ scope })
