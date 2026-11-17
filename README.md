@@ -10,9 +10,9 @@ HK Mate 是一个在自己电脑上运行的 Web 应用，把 Gmail、HKU 课表
 
 ![主页：接下来 5 天的课程、日程和截止事项，以及 AI 助手](docs/screenshots/zh/home.jpg)
 
-| AI 助手：问附近吃什么 | 我的课表：粘贴链接导入整学期 |
+| 我的课表：粘贴链接导入整学期 |
 |---|---|
-| ![AI 助手：问附近吃什么](docs/screenshots/zh/assistant.jpg) | ![我的课表：粘贴链接导入整学期](docs/screenshots/zh/timetable.jpg) |
+| ![我的课表：粘贴链接导入整学期](docs/screenshots/zh/timetable.jpg) |
 
 | 我的日程：截止事项带剩余时间 | 邮件：分邮箱查看，自动分类和摘要 |
 |---|---|
