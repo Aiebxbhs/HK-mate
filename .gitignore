@@ -57,3 +57,6 @@ private-data/
 # Personal course documents and recordings kept out of the repository
 docs/Proposal*.docx
 *.mp4
+
+# Intro video: rendered frames and files
+video/out/

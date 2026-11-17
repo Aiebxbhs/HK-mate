@@ -1,0 +1,389 @@
+:root {
+  --ink: #2a2724;
+  --muted: #6b655f;
+  --accent: #f0894a;
+  --accent-ink: #9a4a17;
+  --paper: #fbf9f6;
+  --ease: cubic-bezier(0.65, 0, 0.35, 1);
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  background: #1c1a18;
+  /* clip, not hidden: scrollIntoView inside the app must never scroll the stage itself. */
+  overflow: clip;
+  font-family: 'PingFang SC', 'Helvetica Neue', sans-serif;
+}
+#stage {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: clip;
+  background: linear-gradient(135deg, #fbf9f6 0%, #f6efe6 55%, #f9e4d4 100%);
+}
+#cam {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  /* The app's 1280 × 720 fills the 1920 × 1080 stage from the first frame. */
+  transform: scale(1.5);
+  transition:
+    transform 0.6s var(--ease),
+    border-radius 0.6s,
+    box-shadow 0.6s;
+}
+#cam.card {
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 50px 120px rgba(0, 0, 0, 0.5);
+}
+#app {
+  display: block;
+  width: 1280px;
+  height: 720px;
+  border: 0;
+  background: var(--paper);
+}
+#speed {
+  position: absolute;
+  right: 48px;
+  top: 40px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(42, 39, 36, 0.78);
+  color: #fff;
+  font-size: 22px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+/* The name of the menu being opened, shown large while the pointer clicks it. */
+#menu-title {
+  position: absolute;
+  left: 50%;
+  top: 430px;
+  translate: -50% 0;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 30px 70px 34px;
+  border-radius: 30px;
+  background: rgba(42, 39, 36, 0.9);
+  box-shadow: 0 30px 80px rgba(42, 39, 36, 0.35);
+  color: #fff;
+  opacity: 0;
+  transform: translateY(30px) scale(0.96);
+  transition:
+    opacity 0.3s,
+    transform 0.4s var(--ease);
+  white-space: nowrap;
+}
+#menu-title.on {
+  opacity: 1;
+  transform: none;
+}
+#menu-title b {
+  font-size: 92px;
+  font-weight: 600;
+  letter-spacing: 6px;
+}
+#menu-title b::before {
+  content: '';
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  margin-right: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: 0.22em;
+}
+#menu-title span {
+  font-size: 34px;
+  color: #e9d9cb;
+  letter-spacing: 2px;
+}
+#menu-title span:empty {
+  display: none;
+}
+
+/* One short line that says what the viewer is looking at, centred at the foot of the screen. */
+#caption {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  translate: -50% 0;
+  max-width: 1600px;
+  padding: 14px 40px;
+  border-radius: 18px;
+  background: rgba(34, 31, 29, 0.88);
+  box-shadow: 0 18px 50px rgba(42, 39, 36, 0.25);
+  color: #fff;
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.3s,
+    transform 0.35s var(--ease);
+}
+#caption.on {
+  opacity: 1;
+  transform: none;
+}
+#caption.lead {
+  font-size: 52px;
+  padding: 18px 48px;
+}
+
+/* A mouse pointer; it shows up only to click something. */
+#pointer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: -3px 0 0 -3px;
+  opacity: 0;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+  transition:
+    transform 0.5s var(--ease),
+    opacity 0.25s;
+  pointer-events: none;
+}
+#pointer.down path {
+  transform: scale(0.88);
+  transform-origin: 2px 2px;
+}
+#ripple {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  opacity: 0;
+  pointer-events: none;
+}
+#ripple.go {
+  animation: ripple 0.45s ease-out;
+}
+@keyframes ripple {
+  from {
+    opacity: 0.85;
+    scale: 0.5;
+  }
+  to {
+    opacity: 0;
+    scale: 2.4;
+  }
+}
+
+/* A drawn stand-in for the macOS notification banner (the real one is outside the page). */
+#banner {
+  position: absolute;
+  right: 40px;
+  top: 96px;
+  width: 640px;
+  display: flex;
+  gap: 18px;
+  padding: 20px 24px;
+  border-radius: 26px;
+  background: rgba(250, 248, 246, 0.96);
+  box-shadow: 0 24px 60px rgba(42, 39, 36, 0.28);
+  transform: translateX(740px);
+  transition: transform 0.55s var(--ease);
+}
+#banner.on {
+  transform: none;
+}
+.banner-icon {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: var(--paper);
+  border: 1px solid rgba(42, 39, 36, 0.1);
+  display: grid;
+  place-items: center;
+}
+.banner-icon span {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 16px rgba(240, 137, 74, 0.6);
+}
+.banner-text {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 23px;
+  line-height: 1.45;
+}
+.banner-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.banner-top i {
+  flex: none;
+  font-style: normal;
+  color: var(--muted);
+  font-size: 19px;
+}
+#banner-subtitle {
+  font-weight: 600;
+}
+#banner-body {
+  color: var(--muted);
+}
+
+/* Opening: the questions a new student has, then the answer. */
+#opening {
+  position: absolute;
+  inset: 0;
+  background: #2b2825;
+  transition: opacity 0.7s;
+}
+.ask {
+  position: absolute;
+  padding: 22px 40px;
+  border-radius: 26px;
+  background: #fbf9f6;
+  color: #2a2724;
+  font-size: 50px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  scale: 0.7;
+  transition:
+    opacity 0.28s,
+    scale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.5s cubic-bezier(0.7, 0, 0.84, 0),
+    filter 0.4s;
+}
+.ask.on {
+  opacity: 1;
+  scale: 1;
+}
+.ask.old {
+  filter: brightness(0.62);
+}
+.ask i {
+  font-style: normal;
+  color: var(--accent);
+}
+#intro {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+}
+#intro-mark,
+.end-mark {
+  font-family: Georgia, 'Songti SC', serif;
+  font-size: 170px;
+  color: var(--paper);
+  white-space: nowrap;
+}
+#intro-mark {
+  opacity: 0;
+  scale: 0.6;
+  transition:
+    opacity 0.45s,
+    scale 0.6s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+#intro-mark.on {
+  opacity: 1;
+  scale: 1;
+}
+#intro-mark span,
+.end-mark span {
+  display: inline-block;
+  width: 0.2em;
+  height: 0.2em;
+  margin-left: 0.08em;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0.3em rgba(240, 137, 74, 0.8);
+}
+#intro-line {
+  margin-top: 26px;
+  font-size: 58px;
+  font-weight: 600;
+  color: #f6e3d3;
+  letter-spacing: 4px;
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.45s,
+    transform 0.5s var(--ease);
+}
+#intro-line.on {
+  opacity: 1;
+  transform: none;
+}
+#intro-parts {
+  margin-top: 64px;
+  display: flex;
+  gap: 22px;
+}
+#intro-parts b {
+  padding: 16px 34px;
+  border-radius: 999px;
+  border: 2px solid rgba(240, 137, 74, 0.75);
+  color: #fbf9f6;
+  font-size: 38px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.35s,
+    transform 0.45s var(--ease),
+    background 0.4s;
+}
+#intro-parts b.on {
+  opacity: 1;
+  transform: none;
+}
+#intro-parts b.lit {
+  background: var(--accent);
+  color: #2a2724;
+}
+
+#ending {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 34px;
+  background: #2b2825;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s;
+}
+.end-line {
+  font-size: 54px;
+  color: #f3ddcc;
+  letter-spacing: 8px;
+}
+
+/* Screenshots for the README: only the app itself, no pointer, captions or drawn banner. */
+.stills #caption,
+.stills #pointer,
+.stills #ripple,
+.stills #menu-title,
+.stills #speed,
+.stills #banner {
+  display: none;
+}
