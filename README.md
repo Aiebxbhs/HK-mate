@@ -6,6 +6,27 @@
 
 HK Mate 是一个在自己电脑上运行的 Web 应用，把 Gmail、HKU 课表、课堂实时翻译和港大校园指南放在一起。邮件摘要、回复草稿和课堂翻译都由本机模型完成，私人邮件和课堂录音不会离开这台电脑；只有首页 AI 助手使用云端模型。
 
+## 界面预览
+
+![主页：接下来 5 天的课程、日程和截止事项，以及 AI 助手](docs/screenshots/zh/home.jpg)
+
+| AI 助手：问附近吃什么 | 我的课表：粘贴链接导入整学期 |
+|---|---|
+| ![AI 助手：问附近吃什么](docs/screenshots/zh/assistant.jpg) | ![我的课表：粘贴链接导入整学期](docs/screenshots/zh/timetable.jpg) |
+
+| 我的日程：截止事项带剩余时间 | 邮件：分邮箱查看，自动分类和摘要 |
+|---|---|
+| ![我的日程：截止事项带剩余时间](docs/screenshots/zh/schedule.jpg) | ![邮件：分邮箱查看，自动分类和摘要](docs/screenshots/zh/mail.jpg) |
+
+| 课堂翻译：英文讲课的中英双语字幕 | 课后重点：每条带时间点和原话 |
+|---|---|
+| ![课堂翻译：英文讲课的中英双语字幕](docs/screenshots/zh/lecture.jpg) | ![课后重点：每条带时间点和原话](docs/screenshots/zh/lecture-summary.jpg) |
+
+
+![HKU 指南：Main Library 逐层设施，按彩色打印筛选楼层](docs/screenshots/zh/guide.jpg)
+
+截图来自演示账号，邮件为自行编写的示例。
+
 ## 亮点
 
 - **邮件不漏看**：后台自动检测 Gmail 新邮件，本机 AI 写摘要（中文或英文，跟随界面语言）并分类（学校 / 求职 / 账单与账户 / 广告推广 / 其他），可一键起草回复，由你自己检查后发送。
