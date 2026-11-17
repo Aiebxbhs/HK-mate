@@ -6,6 +6,27 @@
 
 HK Mate is a web app that runs on your own computer. It brings together Gmail, your HKU timetable, live lecture translation and an HKU campus guide. Email summaries, reply drafts and lecture translation all run on local models, so your private email and lecture recordings never leave the computer; only the AI assistant on the home page uses a cloud model.
 
+## Screenshots
+
+![Home: classes, events and deadlines for the next 5 days, plus the AI assistant](docs/screenshots/en/home.jpg)
+
+| AI assistant: where to eat nearby | Timetable: paste a link, get the whole semester |
+|---|---|
+| ![AI assistant: where to eat nearby](docs/screenshots/en/assistant.jpg) | ![Timetable: paste a link, get the whole semester](docs/screenshots/en/timetable.jpg) |
+
+| Schedule: deadlines show the time left | Mail: one tab per mailbox, sorted and summarized |
+|---|---|
+| ![Schedule: deadlines show the time left](docs/screenshots/en/schedule.jpg) | ![Mail: one tab per mailbox, sorted and summarized](docs/screenshots/en/mail.jpg) |
+
+| Lectures: live English and Chinese captions | After class: key points with time and quote |
+|---|---|
+| ![Lectures: live English and Chinese captions](docs/screenshots/en/lecture.jpg) | ![After class: key points with time and quote](docs/screenshots/en/lecture-summary.jpg) |
+
+
+![HKU guide: Main Library floor by floor, filtered by colour printing](docs/screenshots/en/guide.jpg)
+
+Screenshots come from a demo account; the emails are self-written samples.
+
 ## Highlights
 
 - **Never miss an email**: new Gmail messages are detected in the background; the local AI summarizes each one and sorts it (School / Jobs / Bills & accounts / Promotions / Other), and can draft a reply that you check and send yourself.
