@@ -67,7 +67,7 @@ There are five places, at the top on a computer and at the bottom on a phone: **
 - **AI assistant**: the input under the greeting, which expands into a chat (see below).
 - **Next 5 days**: classes, your own events and deadlines, day by day. A class in progress is marked "Now", the next class shows "in x min", and deadlines due within 24 hours get an orange dot. With nothing scheduled yet, you can "Import timetable" or "Add event" right there.
 
-### Mail
+### Mail（HKU email does not allow external API access, but emails can be forwarded to a 163 or Gmail account for use.）
 
 The number next to "Mail" in the navigation is how many new emails you haven't dealt with. Sub-pages: Inbox, Draft an email, Mailboxes.
 
