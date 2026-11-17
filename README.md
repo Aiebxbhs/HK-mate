@@ -245,14 +245,20 @@ docs/                   功能说明、开发计划与决策记录
 |---|---|
 | [GMAIL_SETUP](docs/GMAIL_SETUP.md) | Gmail OAuth 配置、备份、解绑与常见问题 |
 | [AUTO_MAIL](docs/AUTO_MAIL.md) | 新邮件自动检测、摘要与分类 |
+| [NETEASE_MAIL](docs/NETEASE_MAIL.md) | 网易邮箱（163 / 126 / yeah.net）接入 |
 | [REPLY_DRAFT](docs/REPLY_DRAFT.md) | 回复草稿与起草新邮件 |
 | [LOCAL_MODEL](docs/LOCAL_MODEL.md) | 本机 Ollama + Qwen 部署与测试 |
 | [HKU_CALENDAR](docs/HKU_CALENDAR.md) | HKU 课表导入与日程 |
 | [LECTURE](docs/LECTURE.md) | 课程实时翻译、课后摘要与课程记录 |
+| [LECTURE_BENCH](docs/LECTURE_BENCH.md) | 语音识别与翻译的选型和延迟实测 |
 | [AI_AGENT_PLAN](docs/AI_AGENT_PLAN.md) | AI 助手设计与进度 |
 | [LOCAL_DEVELOPMENT](docs/LOCAL_DEVELOPMENT.md) | 本地环境与账号方案 |
 | [DEVELOPMENT_STANDARDS](docs/DEVELOPMENT_STANDARDS.md) | 开发规范与 API 列表 |
+| [FRONTEND_DESIGN](docs/FRONTEND_DESIGN.md) | 前端设计约定 |
+| [VIDEO](docs/VIDEO.md) | 介绍视频与 README 截图的制作方式 |
+| [ROADMAP](docs/ROADMAP.md) | 待办与计划 |
 | [MAC_APP_AND_WEBSITE_PLAN](docs/MAC_APP_AND_WEBSITE_PLAN.md) | Mac App 与介绍网站计划（待确认） |
+| [AGENT_KEYS_PLAN](docs/AGENT_KEYS_PLAN.md) | 按账号配置 AI 服务商和 Key 的方案（待确认） |
 | [decisions/](docs/decisions/) | 架构决策记录 |
 
 开发规则见 [AGENTS.md](AGENTS.md)。

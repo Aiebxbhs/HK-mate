@@ -2,7 +2,7 @@
 
 Audio arrives as 16 kHz mono PCM16 over a WebSocket, lives only in memory and is dropped as
 soon as a sentence is recognized. Recognized text and translations are sent back to the
-browser and never logged or stored here. See docs/LECTURE_TRANSLATION_PLAN.md.
+browser and never logged or stored here. See docs/LECTURE.md.
 """
 
 import asyncio

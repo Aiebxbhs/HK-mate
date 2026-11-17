@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>HK Mate intro video</title>
+    <link rel="stylesheet" href="director.css" />
+  </head>
+  <body>
+    <div id="stage">
+      <div id="cam"><iframe id="app" title="HK Mate" allow="microphone"></iframe></div>
+      <div id="speed"></div>
+      <div id="menu-title"><b id="menu-name"></b><span id="menu-hint"></span></div>
+      <div id="banner">
+        <div class="banner-icon"><span></span></div>
+        <div class="banner-text">
+          <div class="banner-top"><b id="banner-title"></b><i>现在</i></div>
+          <div id="banner-subtitle"></div>
+          <div id="banner-body"></div>
+        </div>
+      </div>
+      <div id="caption"></div>
+      <div id="ripple"></div>
+      <svg id="pointer" viewBox="0 0 28 40" width="42" height="60" aria-hidden="true">
+        <path
+          d="M2 2 L2 31 L9.5 24 L14.5 36 L19.5 34 L14.5 22.5 L25 22.5 Z"
+          fill="#1f1d1b"
+          stroke="#ffffff"
+          stroke-width="2.4"
+          stroke-linejoin="round"
+        />
+      </svg>
+      <div id="opening"></div>
+      <div id="ending">
+        <div class="end-mark">HK Mate<span></span></div>
+        <div class="end-line" id="end-line"></div>
+      </div>
+    </div>
+    <script type="module" src="scenes.js"></script>
+  </body>
+</html>

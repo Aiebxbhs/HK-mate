@@ -243,14 +243,20 @@ The documents are written in Chinese.
 |---|---|
 | [GMAIL_SETUP](docs/GMAIL_SETUP.md) | Gmail OAuth setup, backups, unlinking and FAQ |
 | [AUTO_MAIL](docs/AUTO_MAIL.md) | Automatic new-mail checks, summaries and categories |
+| [NETEASE_MAIL](docs/NETEASE_MAIL.md) | NetEase mail (163 / 126 / yeah.net) |
 | [REPLY_DRAFT](docs/REPLY_DRAFT.md) | Reply drafts and new emails |
 | [LOCAL_MODEL](docs/LOCAL_MODEL.md) | Local Ollama + Qwen setup and tests |
 | [HKU_CALENDAR](docs/HKU_CALENDAR.md) | HKU timetable import and schedule |
 | [LECTURE](docs/LECTURE.md) | Live lecture translation, summaries and records |
+| [LECTURE_BENCH](docs/LECTURE_BENCH.md) | Speech recognition and translation benchmarks |
 | [AI_AGENT_PLAN](docs/AI_AGENT_PLAN.md) | AI assistant design and progress |
 | [LOCAL_DEVELOPMENT](docs/LOCAL_DEVELOPMENT.md) | Local environment and account design |
 | [DEVELOPMENT_STANDARDS](docs/DEVELOPMENT_STANDARDS.md) | Development standards and API list |
+| [FRONTEND_DESIGN](docs/FRONTEND_DESIGN.md) | Frontend design conventions |
+| [VIDEO](docs/VIDEO.md) | How the intro video and README screenshots are made |
+| [ROADMAP](docs/ROADMAP.md) | Open work and plans |
 | [MAC_APP_AND_WEBSITE_PLAN](docs/MAC_APP_AND_WEBSITE_PLAN.md) | Mac app and website plan (draft) |
+| [AGENT_KEYS_PLAN](docs/AGENT_KEYS_PLAN.md) | Per-account AI provider keys (draft) |
 | [decisions/](docs/decisions/) | Architecture decision records |
 
 Development rules: [AGENTS.md](AGENTS.md).
