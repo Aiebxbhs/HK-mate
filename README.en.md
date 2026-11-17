@@ -8,22 +8,39 @@ HK Mate is a web app that runs on your own computer. It brings together Gmail, y
 
 ## Screenshots
 
-![Home: classes, events and deadlines for the next 5 days, plus the AI assistant](docs/screenshots/en/home.jpg)
+### Home
 
-| AI assistant: where to eat nearby | Timetable: paste a link, get the whole semester |
-|---|---|
-| ![AI assistant: where to eat nearby](docs/screenshots/en/assistant.jpg) | ![Timetable: paste a link, get the whole semester](docs/screenshots/en/timetable.jpg) |
+A greeting and the date in Hong Kong time, the AI assistant, and classes, events and deadlines for the next 5 days.
 
-| Schedule: deadlines show the time left | Mail: one tab per mailbox, sorted and summarized |
-|---|---|
-| ![Schedule: deadlines show the time left](docs/screenshots/en/schedule.jpg) | ![Mail: one tab per mailbox, sorted and summarized](docs/screenshots/en/mail.jpg) |
+![Home](docs/screenshots/en/home.jpg)
 
-| Lectures: live English and Chinese captions | After class: key points with time and quote |
-|---|---|
-| ![Lectures: live English and Chinese captions](docs/screenshots/en/lecture.jpg) | ![After class: key points with time and quote](docs/screenshots/en/lecture-summary.jpg) |
+### Schedule
 
+Timetable: paste your HKU Event Calendar link to import it and browse the semester week by week. You can add your own events and deadlines under My schedule.
 
-![HKU guide: Main Library floor by floor, filtered by colour printing](docs/screenshots/en/guide.jpg)
+![Timetable](docs/screenshots/en/timetable.jpg)
+
+### Mail
+
+One tab per mailbox. The local AI sorts and summarizes new mail; you can read the original, add it to your schedule or draft a reply.
+
+![Mail](docs/screenshots/en/mail.jpg)
+
+### Lectures
+
+English lectures become live English and Chinese captions, with time-stamped notes alongside and a summary with key points after class.
+
+![Lectures](docs/screenshots/en/lecture.jpg)
+
+### HKU guide
+
+Library: the Main Library floor by floor; filter floors by colour printing, scanning, study space and more.
+
+![HKU guide: library](docs/screenshots/en/guide.jpg)
+
+Getting around: the official Main Campus map, plus MTR, bus and campus shuttle information.
+
+![Official Main Campus map](docs/screenshots/en/guide-map.jpg)
 
 Screenshots come from a demo account; the emails are self-written samples.
 

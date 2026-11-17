@@ -8,24 +8,46 @@ HK Mate 是一个在自己电脑上运行的 Web 应用，把 Gmail、HKU 课表
 
 ## 界面预览
 
-![主页：接下来 5 天的课程、日程和截止事项，以及 AI 助手](docs/screenshots/zh/home.jpg)
+### 主页
 
-| 我的课表：粘贴链接导入整学期 |
-|---|---|
-| ![我的课表：粘贴链接导入整学期](docs/screenshots/zh/timetable.jpg) |
+按香港时间的问候和日期、AI 助手输入条，以及“接下来 5 天”的课程、日程和截止事项。
 
-| 我的日程：截止事项带剩余时间 | 邮件：分邮箱查看，自动分类和摘要 |
-|---|---|
-| ![我的日程：截止事项带剩余时间](docs/screenshots/zh/schedule.jpg) | ![邮件：分邮箱查看，自动分类和摘要](docs/screenshots/zh/mail.jpg) |
+![主页](docs/screenshots/zh/home.jpg)
 
-| 课堂翻译：英文讲课的中英双语字幕 | 课后重点：每条带时间点和原话 |
-|---|---|
-| ![课堂翻译：英文讲课的中英双语字幕](docs/screenshots/zh/lecture.jpg) | ![课后重点：每条带时间点和原话](docs/screenshots/zh/lecture-summary.jpg) |
+### 日程
 
+“我的课表”：粘贴 HKU Event Calendar 链接导入，整学期按周查看；“我的日程”里可以自己添加日程和截止事项。
 
-![HKU 指南：Main Library 逐层设施，按彩色打印筛选楼层](docs/screenshots/zh/guide.jpg)
+![我的课表](docs/screenshots/zh/timetable.jpg)
 
-截图来自演示账号，邮件为自行编写的示例。
+### 邮件
+
+每个邮箱一个标签页；新邮件由本机 AI 自动分类并写摘要，可查看原文、加入日程或起草回复。
+
+![邮件](docs/screenshots/zh/mail.jpg)
+
+### 课堂翻译
+
+英文讲课实时转成中英双语字幕，旁边可以记带时间点的笔记，下课后生成摘要和重点。
+
+![课堂翻译](docs/screenshots/zh/lecture.jpg)
+
+### HKU 指南
+
+图书馆：Main Library 逐层设施图，可按彩色打印、扫描、自习空间等筛选楼层。
+
+![HKU 指南：图书馆](docs/screenshots/zh/guide.jpg)
+
+交通与校园位置：港大官方主校园平面图和嵌入的官方在线地图，另有港铁、巴士和穿梭巴士信息。
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/zh/guide-map.jpg" alt="官方主校园平面图" width="100%"><br><sub>官方主校园平面图</sub></td>
+    <td width="50%"><img src="docs/screenshots/zh/guide-official-map.jpg" alt="嵌入的官方在线地图" width="100%"><br><sub>嵌入的官方在线地图</sub></td>
+  </tr>
+</table>
+
+主页、邮件、课堂翻译和图书馆的截图来自演示账号，邮件为自行编写的示例。
 
 ## 亮点
 
